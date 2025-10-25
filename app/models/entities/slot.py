@@ -6,3 +6,14 @@ class slotEntity:
         self.date = date
         self.stylist_id = stylist_id
         self.status = status
+
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "date": self.date,
+            "stylist_id": self.stylist_id,
+            "status": self.status
+        }

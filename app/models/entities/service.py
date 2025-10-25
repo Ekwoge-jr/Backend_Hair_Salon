@@ -5,3 +5,13 @@ class serviceEntity:
         self.description = description
         self.price = price
         self.duration = duration
+
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": self.price,
+            "duration": self.duration,
+            "description": self.description
+        }
