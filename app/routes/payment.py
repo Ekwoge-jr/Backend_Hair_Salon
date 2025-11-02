@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from app.integrations.stripe import create_payment_intent
 from app import db
-from app.models.orm.payment_model import PaymentModel
+
+from app.models.repositories.payment_repo import PaymentRepository
+from app.services.payment_service import PaymentService
 
 payment_bp = Blueprint("payment_bp", __name__)
 
@@ -11,19 +13,20 @@ def create_payment():
     amount = data.get("amount")
     currency = data.get("currency", "usd")
 
+    client_id = data.get("client_id")
+    service_id = data.get("service_id")
+    slot_id = data.get("slot_id")
+
+    metadata={
+        "client_id": client_id,
+        "service_id": service_id,
+        "slot_id": slot_id
+    }
+
+
     try:
-        payment_intent = create_payment_intent(amount, currency)
+        
+        return PaymentService.create_payment(amount, currency, metadata)
 
-        payment = PaymentModel(
-        stripe_id=payment_intent["id"],
-        amount=payment_intent["amount"] / 100,  # convert from cents
-        currency=payment_intent["currency"],
-        status=payment_intent["status"]
-        )
-        db.session.add(payment)
-        db.session.commit()
-
-
-        return jsonify(payment_intent), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400

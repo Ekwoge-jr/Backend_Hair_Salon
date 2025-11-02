@@ -62,19 +62,34 @@ class UserRepository:
 # update
     @staticmethod
     def update_user(user_id, first_name=None, last_name=None, email=None, phone_number=None, address=None, password=None, role=None):
-        user = db.session.query(UserModel).filter_by(id=user_id).first()
-        if user:
-            user.first_name = first_name
-            user.last_name = last_name
-            user.email = email
-            user.phone_number = phone_number
-            user.address = address
-            user.password = password
-            user.role = role
+        
+        try:
+            user = db.session.query(UserModel).filter_by(id=user_id).first()
+            if not user:
+                return {"error": "Service not available"}
+        
+            if first_name is not None:
+                user.first_name = first_name
+            if last_name is not None:
+                user.last_name = last_name
+            if email is not None:
+                user.email = email
+            if phone_number is not None:
+                user.phone_number = phone_number
+            if address is not None:
+                user.address = address
+            if password is not None:
+                user.password = password
+            if role is not None:
+                user.role = role
+
             db.session.commit()
             db.session.refresh(user)
-            return True
-        return False
+            return UserRepository._to_entity(user)
+        
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Failed to update user: {str(e)}"}
 
 
 # delete

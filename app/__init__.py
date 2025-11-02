@@ -5,6 +5,7 @@ from app.database import db
 from app.routes.payment import payment_bp
 from app.routes.calendar import calendar_bp
 from app.routes.test import user_bp
+from app.routes.stripe_webhook import stripe_webhook_bp
 
 
 
@@ -24,4 +25,5 @@ def create_app():
     app.register_blueprint(payment_bp, url_prefix="/api/payment")
     app.register_blueprint(calendar_bp, url_prefix="/api/calendar")
     app.register_blueprint(user_bp, url_prefix="/api/user")
+    app.register_blueprint(stripe_webhook_bp, url_prefix="/api")
     return app

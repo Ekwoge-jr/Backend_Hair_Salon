@@ -55,6 +55,11 @@ class AppointmentRepository:
         return AppointmentRepository._to_entity(result) if result else None
     
     @staticmethod
+    def get_appointment_by_event_id(event_id):
+        result = db.session.query(AppointmentModel).filter(AppointmentModel.google_event_id == event_id).first()
+        return AppointmentRepository._to_entity(result) if result else None
+    
+    @staticmethod
     def get_appointments_by_client(client_id):
         results = db.session.query(AppointmentModel).filter(AppointmentModel.client_id == client_id).all()
         return [AppointmentRepository._to_entity(appointment) for appointment in results]
@@ -78,6 +83,32 @@ class AppointmentRepository:
     
 
 # update
+    @staticmethod
+    def update_appointment(appointment_id, service_id = None, slot_id = None, google_event_id = None):
+        
+        try:
+            appointment = db.session.query(AppointmentModel).filter_by(id=appointment_id).first()
+            if not appointment:
+                return False
+        
+            # Only update provided fields
+            if service_id is not None:
+                appointment.service_id = service_id
+            if slot_id is not None:
+                appointment.slot_id = slot_id
+            if google_event_id is not None:
+                appointment.google_event_id = google_event_id
+
+            db.session.commit()
+            db.session.refresh(appointment)
+            return AppointmentRepository._to_entity(appointment)
+        
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Failed to update appointment: {str(e)}"}
+    
+        
+    
     @staticmethod
     def update_status(appointment_id, status):
         appointment = db.session.query(AppointmentModel).filter_by(id=appointment_id).first()

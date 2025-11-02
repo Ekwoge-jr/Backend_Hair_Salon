@@ -1,5 +1,5 @@
 class paymentEntity:
-    def __init__(self, id=None, stripe_id=None, amount=None, currency=None, created_at=None, status="available"):
+    def __init__(self, id=None, stripe_id=None, amount=None, currency=None, created_at=None, status=None):
         self.id = id
         self.stripe_id = stripe_id
         self.amount = amount
@@ -8,6 +8,7 @@ class paymentEntity:
         self.status = status
 
 
+    # Converts the entity to a dictionary, which is json serialized
     def to_dict(self):
         return {
             "id": self.id,

@@ -49,12 +49,29 @@ class PaymentRepository:
     def get_payment_by_id(id):
         result = db.session.query(PaymentModel).filter(PaymentModel.id == id).first()
         return PaymentRepository._to_entity(result) if result else None
+
+    @staticmethod
+    def get_payment_by_stripe_id(id):
+        result = db.session.query(PaymentModel).filter(PaymentModel.stripe_id == id).first()
+        return PaymentRepository._to_entity(result) if result else None
     
     @staticmethod
     def get_payment_by_status(status):
         results = db.session.query(PaymentModel).filter(PaymentModel.status == status).all()
         return [PaymentRepository._to_entity(payment) for payment in results]
     
+
+# update
+    @staticmethod
+    def update_status(id, status):
+        payment = db.session.query(PaymentModel).filter_by(stripe_id=id).first()
+        if payment:
+            payment.status = status
+            db.session.commit()
+            db.session.refresh(payment)
+            return True
+        return False
+
 
 # delete
     @staticmethod

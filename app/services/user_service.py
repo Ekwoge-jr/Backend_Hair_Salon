@@ -1,3 +1,4 @@
+import re
 from app.models.entities.user import userEntity
 from app.models.repositories.user_repo import UserRepository
 
@@ -10,6 +11,15 @@ class UserService:
         user = UserRepository.get_users_by_email(email)
         if user:
             return True
+        elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+            return {"message": "Invalid email address!"}
+        elif not re.match(r'[A-Za-z]+', first_name):
+            return {"message": "Username must contain only characters!"}
+        elif not first_name:
+            return {"message": "Please enter your first name!"}
+        elif not email:
+            return {"message": "Please enter your email!"}
+        
         else:
             user = userEntity(
                 first_name = first_name,
@@ -29,23 +39,5 @@ class UserService:
 
     @staticmethod
     def update_user(user_id, first_name=None, last_name=None, email=None, phone_number=None, address=None, password=None, role=None):
-        user = UserRepository.get_users_by_id(user_id)
-        if not user:
-            return False
-        
-        if first_name:
-            user.first_name = first_name
-        if last_name:
-            user.last_name = last_name
-        if email:
-            user.email = email
-        if phone_number:
-            user.phone_number = phone_number
-        if address:
-            user.address = address
-        if password:
-            user.password = password
-        if role:
-            user.role = role
-
-        return UserRepository.update_user(user_id, user.first_name, user.last_name, user.email, user.phone_number, user.address, user.password, user.role)
+        user = UserRepository.update_user(user_id, first_name, last_name, email, phone_number, address, password, role) 
+        return user.to_dict()

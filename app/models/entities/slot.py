@@ -8,6 +8,7 @@ class slotEntity:
         self.status = status
 
 
+    # Converts the entity to a dictionary, which is json serialized
     def to_dict(self):
         return {
             "id": self.id,

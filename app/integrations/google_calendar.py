@@ -1,9 +1,10 @@
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from tzlocal import get_localzone
 import datetime
 import os
+
 
 # Google Calendar API Scopes (defines what you can access)
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
@@ -56,3 +57,21 @@ def create_google_event(summary, description, start_time, end_time):
 
     created_event = service.events().insert(calendarId="primary", body=event).execute()
     return created_event.get("id")
+
+
+def cancel_google_event(event_id):
+    """
+    Cancles a Google Calendar event.
+    """
+    service = get_calendar_service()
+    try:
+        # this line of code deletes the event from google
+        service.events().delete(calendarId="primary", eventId=event_id).execute()
+
+        # while this event just sets the status to cancelled, but users can still see it dimmed in their calendar
+        #service.events().patch(calendarId="primary", eventId=event_id, body={'status': 'cancelled'}).execute()
+        return {"message": "Event cancelled successfully"}
+    except Exception as e:
+        return {"error": str(e)}
+        
+    

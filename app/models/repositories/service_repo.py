@@ -56,17 +56,30 @@ class ServiceRepository:
 
 # update
     @staticmethod
-    def update_service(service_id, name, description, price, duration):
-        service = db.session.query(ServiceModel).filter_by(id=service_id).first()
-        if service:
-            service.name = name
-            service.description = description
-            service.price = price
-            service.duration = duration
+    def update_service(service_id, name=None, description=None, price=None, duration=None):
+
+        try:
+            service = db.session.query(ServiceModel).filter_by(id=service_id).first()
+            if not service:
+                return {"error": "Service not available"}
+        
+            if name is not None:
+                service.name = name
+            if description is not None:
+                service.description = description
+            if price is not None:
+                service.price = price
+            if duration is not None:
+                service.duration = duration
+            
             db.session.commit()
             db.session.refresh(service)
-            return True
-        return False
+            return ServiceRepository._to_entity(service)
+    
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Failed to update service: {str(e)}"}
+        
     
 
 # delete
@@ -76,8 +89,8 @@ class ServiceRepository:
         if service:
             db.session.delete(service)
             db.session.commit()
-            return True
-        return False
+            return {"message": "Delete successful"}
+        return {"error": "service not available"}
     
 
 
