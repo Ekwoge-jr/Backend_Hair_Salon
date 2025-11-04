@@ -2,6 +2,7 @@ from app.models.orm.slot_model import SlotModel
 from sqlalchemy.orm import Session
 from app import db
 from app.models.entities.slot import slotEntity
+from datetime import datetime, timezone
 
 class SlotRepository:
 
@@ -59,6 +60,18 @@ class SlotRepository:
         results = db.session.query(SlotModel).filter(SlotModel.status == status).all()
         return [SlotRepository._to_entity(slot) for slot in results]
     
+    @staticmethod
+    def expire_old_slots():
+        now = datetime.now(timezone.utc)
+        # get expired slots
+        expired = db.session.query(SlotModel).filter(SlotModel.status == "available", SlotModel.end_time < now).all()
+        # traverse the expired slots and change their status to expired
+        for slot in expired:
+            slot.status = "expired"
+
+        db.session.commit()
+        return len(expired)
+
 
 # update
     @staticmethod

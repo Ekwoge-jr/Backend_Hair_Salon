@@ -5,11 +5,12 @@ from app.models.entities.service import serviceEntity
 class ServiceService:
 
     @staticmethod
-    def create_service(name, description, price, duration):
+    def create_service(name, description, price, image, duration):
         service = serviceEntity(
             name = name,
             description = description,
             price = price,
+            image = image,
             duration = duration
         )
         return ServiceRepository.save_service(service)
@@ -21,8 +22,8 @@ class ServiceService:
     
 
     @staticmethod
-    def update_service(service_id, name=None, description=None, price=None, duration=None):    
-        service = ServiceRepository.update_service(service_id, name, description, price, duration)
+    def update_service(service_id, name=None, description=None, price=None, image=None, duration=None):    
+        service = ServiceRepository.update_service(service_id, name, description, price, image, duration)
         return service.to_dict()
     
 

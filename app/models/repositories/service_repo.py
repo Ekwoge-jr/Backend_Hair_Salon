@@ -15,6 +15,7 @@ class ServiceRepository:
             name = model.name,
             description = model.description,
             price = model.price,
+            image = model.image,
             duration = model.duration
         )
 
@@ -26,6 +27,7 @@ class ServiceRepository:
             name = entity.name,
             description = entity.description,
             price = entity.price,
+            image = entity.image,
             duration = entity.duration
         )
         db.session.add(new_service)
@@ -56,7 +58,7 @@ class ServiceRepository:
 
 # update
     @staticmethod
-    def update_service(service_id, name=None, description=None, price=None, duration=None):
+    def update_service(service_id, name=None, description=None, price=None, image=None, duration=None):
 
         try:
             service = db.session.query(ServiceModel).filter_by(id=service_id).first()
@@ -69,6 +71,8 @@ class ServiceRepository:
                 service.description = description
             if price is not None:
                 service.price = price
+            if image is not None:
+                service.image = image
             if duration is not None:
                 service.duration = duration
             

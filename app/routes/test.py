@@ -12,7 +12,7 @@ from datetime import datetime
 import pytz
 from app.services.slot_service import SlotService
 
-from app.utils.token_util import verify_token
+
 
 
 user_bp = Blueprint("user_bp", __name__)

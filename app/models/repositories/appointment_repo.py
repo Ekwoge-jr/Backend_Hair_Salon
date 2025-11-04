@@ -3,6 +3,8 @@ from app.models.entities.appointment import appointmentEntity
 from sqlalchemy.orm import Session
 from app import db
 from sqlalchemy import text
+from datetime import datetime, timezone
+from app.models.orm.slot_model import SlotModel
 
 class AppointmentRepository:
     
@@ -45,14 +47,54 @@ class AppointmentRepository:
 
 # read
     @staticmethod
-    def get_all_appointments():
-        results = db.session.query(AppointmentModel).all()
-        return [AppointmentRepository._to_entity(appointment) for appointment in results]
+    def get_all_appointments(appointment_id = None):
+        """ This function returns the appointment with its details in words, like the client name and others.
+            It can also return a specific appointment, if the appointment id is given. 
+        """
+        sql = """
+        SELECT 
+            a.id AS appointment_id,
+            a.status AS appointment_status,
+            a.created_at AS appointment_created_at,
+            a.google_event_id,
+            u.first_name AS client_name,
+            u.email AS client_email,
+            se.name AS service_name,
+            us.first_name AS stylist_name,
+            s.start_time,
+            s.end_time,
+            s.date
+        FROM appointments a
+        INNER JOIN users u ON a.client_id = u.id
+        INNER JOIN services se ON a.service_id = se.id
+        INNER JOIN slots s ON a.slot_id = s.id
+        INNER JOIN users us ON s.stylist_id = us.id
+        """
+
+        # Add this condition if appointment_id is provided
+        if appointment_id:
+            sql += " WHERE a.id = :appointment_id"
+
+        sql += " ORDER BY s.date DESC"
+
+        # Execute SQL
+        params = {"appointment_id": appointment_id} if appointment_id else {}
+        results = db.session.execute(text(sql), params).mappings().all()
+
+        if not results:
+            return None if appointment_id else []
+        
+        # results = db.session.execute(sql).mappings().all()
+        if appointment_id:
+            return dict(results[0])  # return one record as dict
+        else:
+            return [dict(row) for row in results]  # return all as list
+       
     
-    @staticmethod
-    def get_appointment_by_id(appointment_id):
-        result = db.session.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
-        return AppointmentRepository._to_entity(result) if result else None
+    #@staticmethod
+    #def get_appointment_by_id(appointment_id):
+    #    result = db.session.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+    #    return AppointmentRepository._to_entity(result) if result else None
     
     @staticmethod
     def get_appointment_by_event_id(event_id):
@@ -72,15 +114,43 @@ class AppointmentRepository:
     @staticmethod
     def get_appointments_by_slot_date(date):
         sql = text("""
-            SELECT a*
+            SELECT a.*
             FROM appointments a
-            INNERJOIN slots s ON a.slot_id = s.id
+            INNER JOIN slots s ON a.slot_id = s.id
             WHERE s.date = :date
         """)
         result = db.session.execute(sql, {"date": date})
         appointments = result.fetchall()
         return [AppointmentRepository._to_entity(appointment) for appointment in appointments]
     
+    @staticmethod
+    def expire_old_appointments():
+        now = datetime.now(timezone.utc)
+        expired = 0
+
+        sql = text("""
+            SELECT a.id AS a_id, a.status AS a_status, s.id AS s_id, s.end_time AS s_end_time
+            FROM appointments a
+            INNER JOIN slots s ON a.slot_id = s.id
+            WHERE a.status = 'booked'
+        """)
+        results = db.session.execute(sql).mappings().all()
+
+        for row in results:
+            if row["s_end_time"] < now:
+                db.session.execute(
+                    text("UPDATE appointments SET status = 'completed' WHERE id = :id"),
+                    {"id": row["a_id"]}
+                )
+                db.session.execute(
+                    text("UPDATE slots SET status = 'expired' WHERE id = :id"),
+                    {"id": row["s_id"]}
+                )
+                expired += 1
+        
+        db.session.commit()
+        return expired 
+
 
 # update
     @staticmethod
@@ -90,7 +160,7 @@ class AppointmentRepository:
             appointment = db.session.query(AppointmentModel).filter_by(id=appointment_id).first()
             if not appointment:
                 return False
-        
+            
             # Only update provided fields
             if service_id is not None:
                 appointment.service_id = service_id

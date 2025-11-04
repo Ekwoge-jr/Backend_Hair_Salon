@@ -1,5 +1,6 @@
 from app.models.entities.slot import slotEntity
 from app.models.repositories.slot_repo import SlotRepository
+from datetime import datetime, timezone
 from flask import jsonify
 
 
@@ -26,6 +27,16 @@ class SlotService:
                 stylist_id = stylist_id
             )
             return SlotRepository.save_slot(slot)    
+
+
+    @staticmethod
+    def expire_old_slots():
+        """
+        Marks all slots whose end_time < current time as expired.
+        This logic is reusable — it can be triggered by APScheduler, cron, or an API.
+        """
+        count = SlotRepository.expire_old_slots()
+        return {f"Marked {count} as expired"}
 
 
     @staticmethod

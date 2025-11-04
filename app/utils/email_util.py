@@ -4,9 +4,12 @@ from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
 
-class EmailUtility:
+class EmailService:
+
     @staticmethod
-    def send_appointment_confirmation(to_email, client_name, service_name, stylist_name, appointment_date, manage_link):
+    def send_appointment_confirmation(client_email, client_name, service_name, stylist_name, appointment_date, manage_link):
+        
+        # setup the sender emails
         sender_email = os.getenv('sender_email')
         sender_password = os.getenv('app_password')  # use Gmail App Passwords
 
@@ -25,7 +28,7 @@ class EmailUtility:
 
         msg = MIMEMultipart()
         msg["From"] = sender_email
-        msg["To"] = to_email
+        msg["To"] = client_email
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain"))
 

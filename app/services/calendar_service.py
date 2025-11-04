@@ -7,19 +7,12 @@ import datetime
 class CalendarService:
 
     @staticmethod
-    def create_calendar_event(start_time, end_time, service_id, stylist_id):
-
-        # get service name for the event description
-        service = ServiceRepository.get_service_by_id(service_id)
-
-        # get the stylist name for the event description
-        stylist = UserRepository.get_users_by_id(stylist_id)
-
+    def create_calendar_event(start_time, end_time, service_name, stylist_first_name):
 
         # create the event on google_calendar and get the event id
         event_id = create_google_event(
-            summary = f"{service.name} Appointment",
-            description = f"Client wants to do {service.name} and is to be done by {stylist.first_name}",
+            summary = f"{service_name} Appointment",
+            description = f"Your have a {service_name} appointment which is to be done by {stylist_first_name}",
             start_time = start_time.isoformat() + "Z",
             end_time = end_time.isoformat() + "Z",
         )
