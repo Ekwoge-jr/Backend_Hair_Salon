@@ -1,7 +1,8 @@
 from flask import Flask
 from app.config import Config
 from app.database import db
-from app.utils.scheduler_util import start_scheduler
+#from app.utils.scheduler_util import start_scheduler
+#import os
 
 from app.routes.payment import payment_bp
 from app.routes.calendar import calendar_bp
@@ -23,7 +24,9 @@ def create_app():
     with app.app_context():
         db.create_all()     # creates all tables if they don't exist yet, but it does not update existing tables (for that, we can use a migration library) 
     
-    scheduler = start_scheduler() 
+    # Prevent scheduler from running twice on Flask reloader
+    #if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    #scheduler = start_scheduler() 
 
     app.register_blueprint(payment_bp, url_prefix="/api/payment")
     app.register_blueprint(calendar_bp, url_prefix="/api/calendar")

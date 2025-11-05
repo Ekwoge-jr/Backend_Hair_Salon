@@ -5,6 +5,7 @@ from app import db
 from sqlalchemy import text
 from datetime import datetime, timezone
 from app.models.orm.slot_model import SlotModel
+from app.models.repositories.token_repo import TokenRepository
 
 class AppointmentRepository:
     
@@ -91,10 +92,10 @@ class AppointmentRepository:
             return [dict(row) for row in results]  # return all as list
        
     
-    #@staticmethod
-    #def get_appointment_by_id(appointment_id):
-    #    result = db.session.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
-    #    return AppointmentRepository._to_entity(result) if result else None
+    @staticmethod
+    def get_appointment_by_id(appointment_id):
+        result = db.session.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+        return AppointmentRepository._to_entity(result) if result else None
     
     @staticmethod
     def get_appointment_by_event_id(event_id):
@@ -127,29 +128,40 @@ class AppointmentRepository:
     def expire_old_appointments():
         now = datetime.now(timezone.utc)
         expired = 0
+        try:    
+            sql = text("""
+                SELECT a.id AS a_id, a.status AS a_status, s.id AS s_id, s.end_time AS s_end_time
+                FROM appointments a
+                INNER JOIN slots s ON a.slot_id = s.id
+                WHERE a.status = 'booked'
+            """)
+            results = db.session.execute(sql).mappings().all()
 
-        sql = text("""
-            SELECT a.id AS a_id, a.status AS a_status, s.id AS s_id, s.end_time AS s_end_time
-            FROM appointments a
-            INNER JOIN slots s ON a.slot_id = s.id
-            WHERE a.status = 'booked'
-        """)
-        results = db.session.execute(sql).mappings().all()
+            for row in results:
+                end_time = row["s_end_time"]
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=timezone.utc)
 
-        for row in results:
-            if row["s_end_time"] < now:
-                db.session.execute(
-                    text("UPDATE appointments SET status = 'completed' WHERE id = :id"),
-                    {"id": row["a_id"]}
-                )
-                db.session.execute(
-                    text("UPDATE slots SET status = 'expired' WHERE id = :id"),
-                    {"id": row["s_id"]}
-                )
-                expired += 1
+                if end_time < now:
+                #if row["s_end_time"] < now:
+                    db.session.execute(
+                        text("UPDATE appointments SET status = 'completed' WHERE id = :id"),
+                        {"id": row["a_id"]}
+                    )
+                    TokenRepository.delete_token(row["a_id"])
+                    db.session.execute(
+                        text("UPDATE slots SET status = 'expired' WHERE id = :id"),
+                        {"id": row["s_id"]}
+                    )
+                    expired += 1
         
-        db.session.commit()
-        return expired 
+            db.session.commit()
+            return expired 
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"[ERROR] Failed to expire old appointments: {e}")
+            return {"error": f"Failed to update appointment: {str(e)}"}
 
 
 # update

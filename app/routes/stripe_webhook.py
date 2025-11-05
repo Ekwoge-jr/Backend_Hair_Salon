@@ -33,16 +33,16 @@ def stripe_webhook():
         payment_intent = event["data"]["object"]
         metadata = payment_intent["metadata"]
 
-        #stripe_id = payment_intent["id"]
-        #client_id = metadata["client_id"]
-        #service_id = metadata["service_id"]
-        #slot_id = metadata["slot_id"]
+        stripe_id = payment_intent["id"]
+        client_id = metadata["client_id"]
+        service_id = metadata["service_id"]
+        slot_id = metadata["slot_id"]
         
 
-        stripe_id = "pi_3SNwXeLrBwVmxIzX0iI8LTBI"
-        client_id = 2
-        service_id = 1
-        slot_id = 1
+        #stripe_id = "pi_3SNwXeLrBwVmxIzX0iI8LTBI"
+        #client_id = 2
+        #service_id = 1
+        #slot_id = 1
         
 
         # Update payment in DB

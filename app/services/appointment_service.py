@@ -85,12 +85,19 @@ class AppointmentService:
 
 
     @staticmethod
+    def get_all_appointments():
+        return AppointmentRepository.get_all_appointments()
+
+
+    @staticmethod
     def expire_old_appointments():
         """
         Marks all appointments whose slot end_time < current time as completed, then setting the slot as expired .
         This logic is reusable — it can be triggered by APScheduler, cron, or an API.
         """
         count = AppointmentRepository.expire_old_appointments()
+
+        
     
         return {f"Marked {count} appointments as completed"}
 
