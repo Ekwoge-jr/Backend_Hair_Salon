@@ -13,6 +13,7 @@ app/uploads/
 
 
 
+
 # Ignore all _pycache_ folders inside app and anywhere
 **/_pycache_/
 */.py[cod]
