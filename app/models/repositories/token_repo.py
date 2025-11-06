@@ -34,7 +34,11 @@ class TokenRepository:
         return entity
     
 
-    
+    #get token
+    @staticmethod
+    def get_token(appointment_id, token):
+        result = AppointmentTokenModel.query.filter_by(appointment_id=appointment_id, token=token).first()
+        return TokenRepository._to_entity(result) if result else None
     
 
     # delete

@@ -26,11 +26,9 @@ class UserRepository:
     @staticmethod
     def save_user(entity: userEntity):
         new_user = UserModel(
-            first_name = entity.first_name,
-            last_name = entity.last_name,
+            full_name = entity.full_name,
             email = entity.email,
             phone_number = entity.phone_number,
-            address = entity.address,
             password = entity.password
         )
         db.session.add(new_user)
@@ -61,23 +59,19 @@ class UserRepository:
 
 # update
     @staticmethod
-    def update_user(user_id, first_name=None, last_name=None, email=None, phone_number=None, address=None, password=None, role=None):
+    def update_user(user_id, full_name=None, email=None, phone_number=None, password=None, role=None):
         
         try:
             user = db.session.query(UserModel).filter_by(id=user_id).first()
             if not user:
                 return {"error": "Service not available"}
         
-            if first_name is not None:
-                user.first_name = first_name
-            if last_name is not None:
-                user.last_name = last_name
+            if full_name is not None:
+                user.first_name = full_name
             if email is not None:
                 user.email = email
             if phone_number is not None:
                 user.phone_number = phone_number
-            if address is not None:
-                user.address = address
             if password is not None:
                 user.password = password
             if role is not None:

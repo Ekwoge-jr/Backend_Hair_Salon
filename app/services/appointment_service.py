@@ -7,6 +7,7 @@ from app.models.repositories.payment_repo import PaymentRepository
 from app.integrations.google_calendar import cancel_google_event
 from app.models.repositories.slot_repo import SlotRepository
 from app.models.repositories.user_repo import UserRepository
+from app.services.user_service import UserService
 import datetime
 
 import secrets
@@ -19,7 +20,7 @@ from app.utils.email_util import EmailService
 class AppointmentService:
 
     @staticmethod
-    def book_appointment(client_id, service_id, slot_id, stripe_id):
+    def book_appointment(client_email, full_name, phone_number, service_id, slot_id, stripe_id):
         try:
             # the stripe_id comes from the stripe_webhook
             payment = PaymentRepository.get_payment_by_stripe_id(stripe_id)
@@ -28,7 +29,8 @@ class AppointmentService:
             slot = SlotRepository.get_slot_by_id(slot_id)
 
             # get client information
-            client = UserRepository.get_users_by_id(client_id)
+            #client = UserRepository.get_users_by_email(client_email)
+            
 
             # get service information
             service = ServiceRepository.get_service_by_id(service_id)
@@ -41,11 +43,14 @@ class AppointmentService:
             event = CalendarService.create_calendar_event(start_time = slot.start_time, 
                                                       end_time = slot.end_time, 
                                                       service_name = service.name, 
-                                                      stylist_first_name = stylist.first_name)
+                                                      stylist_first_name = stylist.full_name)
+            
+            #save user info
+            client = UserService.create_user(full_name, client_email, phone_number, password=None)
 
             # save appointment to the database
             appointment = appointmentEntity(
-                client_id = client_id,
+                client_id = client.id,
                 service_id = service_id,
                 slot_id = slot_id,
                 payment_id = payment.id, 
@@ -76,8 +81,10 @@ class AppointmentService:
 
 
             # Send notification via email
-            EmailService.send_appointment_confirmation(client.email, client.first_name, service.name, stylist.first_name, slot.date, manage_link)
+            EmailService.send_appointment_confirmation(client_email, full_name, service.name, stylist.full_name, slot.date, manage_link)
          
+            
+
             return saved_appointment.to_dict()
         
         except Exception as e:
@@ -86,6 +93,9 @@ class AppointmentService:
 
     @staticmethod
     def get_all_appointments():
+        """ This function returns the appointment with its details in words, like the client name and others.
+            It can also return a specific appointment, if the appointment id is given. 
+        """
         return AppointmentRepository.get_all_appointments()
 
 
@@ -123,9 +133,15 @@ class AppointmentService:
         slot = SlotRepository.get_slot_by_id(slot_id)
         if not slot:
             return {"error": "Slot not found"}
+        
+        # get service information
+        service = ServiceRepository.get_service_by_id(service_id)
+
+        # get stylist information
+        stylist = UserRepository.get_users_by_id(slot.stylist_id)
 
         # Create new calendar event
-        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service_id, slot.stylist_id)
+        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service.name, stylist.full_name)
 
         # changing the status of the slots (if a new slot is selected)
         if slot_id:
@@ -139,8 +155,8 @@ class AppointmentService:
         updated_appointment = AppointmentRepository.update_appointment(
             appointment_id, service_id, slot_id, google_event_id=new_event_id
         )
-
-        return updated_appointment.to_dict()
+       
+        return {"message": "Appointment updated successfully"}
 
 
 

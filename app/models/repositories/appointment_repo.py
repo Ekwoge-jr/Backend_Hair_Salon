@@ -58,10 +58,10 @@ class AppointmentRepository:
             a.status AS appointment_status,
             a.created_at AS appointment_created_at,
             a.google_event_id,
-            u.first_name AS client_name,
+            u.full_name AS client_name,
             u.email AS client_email,
             se.name AS service_name,
-            us.first_name AS stylist_name,
+            us.full_name AS stylist_name,
             s.start_time,
             s.end_time,
             s.date

@@ -19,5 +19,5 @@ class PaymentService:
         currency = payment_intent["currency"],
         status = payment_intent["status"]
         )
-        
-        return PaymentRepository.save_payment(payment)
+        PaymentRepository.save_payment(payment)
+        return payment_intent

@@ -34,7 +34,11 @@ def stripe_webhook():
         metadata = payment_intent["metadata"]
 
         stripe_id = payment_intent["id"]
-        client_id = metadata["client_id"]
+        client_email = metadata["client_email"]
+
+        full_name = metadata["full_name"]
+        phone_number = metadata["phone_number"]
+
         service_id = metadata["service_id"]
         slot_id = metadata["slot_id"]
         
@@ -49,11 +53,12 @@ def stripe_webhook():
         PaymentRepository.update_status(stripe_id, "succeeded")
 
         # Trigger the appointment creation
-        AppointmentService.book_appointment(client_id, service_id, slot_id, stripe_id)
+        AppointmentService.book_appointment(client_email, full_name, phone_number, service_id, slot_id, stripe_id)
+
 
     elif event["type"] == "payment_intent.payment_failed":
-        #payment_intent = event["data"]["object"]
-        #PaymentRepository.update_status(payment_intent["id"], "failed")
+        payment_intent = event["data"]["object"]
+        PaymentRepository.update_status(payment_intent["id"], "failed")
         print("❌ Payment failed")
 
     return jsonify({"status": "success"}), 200
