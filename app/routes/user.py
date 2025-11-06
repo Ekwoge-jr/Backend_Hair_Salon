@@ -43,7 +43,7 @@ def create_user():
 
 
     data = request.get_json()
-    full_name = data.get("first_name")
+    full_name = data.get("full_name")
     email = data.get("email")
     phone_number = data.get("phone_number")
     password = data.get("password")
@@ -125,7 +125,7 @@ def update(user_id):
     
     try:
         results = UserService.update_user(user_id,full_name,email,phone_number,password,role)
-        return jsonify(results)
+        return jsonify(results.to_dict())
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     

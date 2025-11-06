@@ -150,7 +150,7 @@ def update(service_id):
     
     try:
         results = ServiceService.update_service(service_id, name, description, price, filename, duration)
-        return jsonify(results), 200
+        return jsonify(results.to_dict()), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     

@@ -24,7 +24,7 @@ class ServiceService:
     @staticmethod
     def update_service(service_id, name=None, description=None, price=None, image=None, duration=None):    
         service = ServiceRepository.update_service(service_id, name, description, price, image, duration)
-        return service.to_dict()
+        return service
     
 
     @staticmethod

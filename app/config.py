@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
 
     # Database connection
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:{os.getenv('password')}@localhost:3306/salon_db"
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 

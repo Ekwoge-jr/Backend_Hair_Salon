@@ -1,3 +1,26 @@
 .env
 credentials.json
 token.json
+
+
+# Python cache
+**/__pycache__/
+
+
+# Uploads or generated media
+app/uploads/
+
+
+
+
+# Ignore all _pycache_ folders inside app and anywhere
+**/_pycache_/
+*/.py[cod]
+
+# Specifically cover app folder (explicit)
+app//_pycache_/
+
+# Ignore compiled python files
+*.pyc
+*.pyo
+*.pyd

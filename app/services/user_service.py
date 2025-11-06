@@ -13,7 +13,8 @@ class UserService:
         
         if password is not None:
             hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-        
+        else:
+            hashed_password = None
         new_user = userEntity(
             full_name = full_name,
             email = email,
@@ -45,4 +46,4 @@ class UserService:
     @staticmethod
     def update_user(user_id, full_name=None, email=None, phone_number=None, password=None, role=None):
         user = UserRepository.update_user(user_id, full_name, email, phone_number, password, role) 
-        return user.to_dict()
+        return user

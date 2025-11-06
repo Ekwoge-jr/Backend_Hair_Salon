@@ -12,11 +12,9 @@ class UserRepository:
         """Convert ORM model to Entity."""
         return userEntity(
             id = model.id,
-            first_name = model.first_name,
-            last_name = model.last_name,
+            full_name = model.full_name,
             email = model.email,
             phone_number = model.phone_number,
-            address = model.address,
             password = model.password,
             role = model.role
         )
