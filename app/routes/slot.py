@@ -23,7 +23,49 @@ def delete_slot(slot_id):
 def create_slot(user_id):
     """
     Create a slot (either date or period)
+    ---
+    tags:
+      - Slots
+    description: Creates a new slot with start time, end time, date and can also take a range of dates (start date and end date).
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the stylist creating the slot
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+              example: "2025-11-22T14:00:00-04:00"
+            end:
+              type: string
+              format: date-time
+              example: "2025-11-22T17:00:00-04:00"
+            date:
+              type: string
+              format: date
+              example: "2025-11-22"
+            start_date:
+              type: string
+              format: date
+              example: "2025-11-22"
+            end_date:
+              type: string
+              format: date 
+              example: "2025-11-30"
+    responses:
+      200:
+        description: User created successfully.
+      400:
+        description: Invalid input or user creation failed.
     """
+
 
     data = request.get_json()
 

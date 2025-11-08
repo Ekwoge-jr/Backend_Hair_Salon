@@ -34,12 +34,13 @@ def stripe_webhook():
     if event["type"] == "payment_intent.succeeded":
         payment_intent = event["data"]["object"]
         metadata = payment_intent.get("metadata", {})
-        """
+        
+        stripe_id = payment_intent["id"]
         client_email = metadata.get("client_email")
         full_name = metadata.get("full_name")
         phone_number = metadata.get("phone_number")
-        #service_id = int(metadata.get("service_id"))
-        #slot_id = int(metadata.get("slot_id"))
+        service_id = int(metadata.get("service_id"))
+        slot_id = int(metadata.get("slot_id"))
         start_time_str = metadata.get("start_time")
 
         # --- Convert start_time to datetime if present ---
@@ -51,30 +52,19 @@ def stripe_webhook():
                     start_time = pytz.UTC.localize(start_time)
             except Exception:
                 print("Invalid start_time format in metadata")
-        """
-    
-
-
-        stripe_t = "pi_3SRBARLrBwVmxIzX0d6RAvb6"
-        client_id = "jane@example.com"
-        client_f = "John Doe"
-        c_phone = "237654321987"
-        cservice_id = 1
-        cslot_id = 1
-        start= "2025-11-10 18:00:00+00:00"
         
 
         # Update payment in DB
-        PaymentRepository.update_status(id=stripe_t, status="succeeded")
+        PaymentRepository.update_status(id=stripe_id, status="succeeded")
         try:
             # Trigger the appointment creation
-            AppointmentService.book_appointment(client_email=client_id, 
-                                                full_name=client_f, 
-                                                phone_number=c_phone, 
-                                                service_id=cservice_id, 
-                                                slot_id=cslot_id, 
-                                                stripe_id=stripe_t, 
-                                                client_start_time=start
+            AppointmentService.book_appointment(client_email=client_email, 
+                                                full_name=full_name, 
+                                                phone_number=phone_number, 
+                                                service_id=service_id, 
+                                                slot_id=slot_id, 
+                                                stripe_id=stripe_id, 
+                                                client_start_time=start_time
                                                 )
             print("✅ Appointment successfully booked:")
         except Exception as e:
