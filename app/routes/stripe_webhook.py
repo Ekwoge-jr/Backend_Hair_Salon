@@ -5,6 +5,8 @@ import os
 from app.models.repositories.payment_repo import PaymentRepository
 from app.services.appointment_service import AppointmentService
 from app.services.service_service import ServiceService
+from datetime import datetime
+import pytz
 
 stripe_webhook_bp = Blueprint("stripe_webhook_bp", __name__)
 
@@ -31,30 +33,52 @@ def stripe_webhook():
     # Handle specific event types
     if event["type"] == "payment_intent.succeeded":
         payment_intent = event["data"]["object"]
-        metadata = payment_intent["metadata"]
+        metadata = payment_intent.get("metadata", {})
+        """
+        client_email = metadata.get("client_email")
+        full_name = metadata.get("full_name")
+        phone_number = metadata.get("phone_number")
+        #service_id = int(metadata.get("service_id"))
+        #slot_id = int(metadata.get("slot_id"))
+        start_time_str = metadata.get("start_time")
 
-        stripe_id = payment_intent["id"]
-        client_email = metadata["client_email"]
+        # --- Convert start_time to datetime if present ---
+        start_time = None
+        if start_time_str:
+            try:
+                start_time = datetime.fromisoformat(start_time_str)
+                if start_time.tzinfo is None:
+                    start_time = pytz.UTC.localize(start_time)
+            except Exception:
+                print("Invalid start_time format in metadata")
+        """
+    
 
-        full_name = metadata["full_name"]
-        phone_number = metadata["phone_number"]
 
-        service_id = metadata["service_id"]
-        slot_id = metadata["slot_id"]
-        
-
-        #stripe_id = "pi_3SNwXeLrBwVmxIzX0iI8LTBI"
-        #client_id = 2
-        #service_id = 1
-        #slot_id = 1
+        stripe_t = "pi_3SRBARLrBwVmxIzX0d6RAvb6"
+        client_id = "jane@example.com"
+        client_f = "John Doe"
+        c_phone = "237654321987"
+        cservice_id = 1
+        cslot_id = 1
+        start= "2025-11-10 18:00:00+00:00"
         
 
         # Update payment in DB
-        PaymentRepository.update_status(stripe_id, "succeeded")
-
-        # Trigger the appointment creation
-        AppointmentService.book_appointment(client_email, full_name, phone_number, service_id, slot_id, stripe_id)
-
+        PaymentRepository.update_status(id=stripe_t, status="succeeded")
+        try:
+            # Trigger the appointment creation
+            AppointmentService.book_appointment(client_email=client_id, 
+                                                full_name=client_f, 
+                                                phone_number=c_phone, 
+                                                service_id=cservice_id, 
+                                                slot_id=cslot_id, 
+                                                stripe_id=stripe_t, 
+                                                client_start_time=start
+                                                )
+            print("✅ Appointment successfully booked:")
+        except Exception as e:
+            print(f"❌ Error while booking appointment: {e}")
 
     elif event["type"] == "payment_intent.payment_failed":
         payment_intent = event["data"]["object"]

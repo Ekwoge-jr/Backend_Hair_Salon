@@ -5,6 +5,8 @@ import re
 from app.models.repositories.payment_repo import PaymentRepository
 from app.services.payment_service import PaymentService
 from flasgger import swag_from
+from datetime import datetime, timezone
+import pytz
 
 
 payment_bp = Blueprint("payment_bp", __name__)
@@ -51,7 +53,11 @@ def create_payment():
               example: 1
             slot_id:
               type: integer
-              example: 5
+              example: 1
+            start_time:
+              type: string
+              format: date-time
+              example: "2025-10-30T14:00:00-04:00"
     responses:
       200:
         description: Payment created successfully
@@ -79,6 +85,9 @@ def create_payment():
     client_email = data.get("client_email")
     full_name = data.get("full_name")
     phone_number = data.get("phone_number")
+    start_time = data.get("start_time")
+  
+    user_timezone = data.get("timezone", "Africa/Douala")
 
     service_id = data.get("service_id")
     slot_id = data.get("slot_id")
@@ -92,15 +101,27 @@ def create_payment():
         return {"message": "Please enter your first name!"}
     elif not client_email:
         return {"message": "Please enter your email!"}
+    
+
+    start_local = datetime.fromisoformat(start_time)
+
+        # If naive datetimes, localize them
+    if start_local.tzinfo is None:
+        tz = pytz.timezone(user_timezone)
+        start_local = tz.localize(start_local)
+
+    # --- Convert to UTC ---
+    start_utc = start_local.astimezone(pytz.UTC)
 
     metadata={
         "client_email": client_email,
         "first_name": full_name,
         "phone_number": phone_number,
         "service_id": service_id,
-        "slot_id": slot_id
+        "slot_id": slot_id,
+        "start_time": start_utc
     }
-
+    
     try:
         
         return PaymentService.create_payment(amount, currency, metadata)

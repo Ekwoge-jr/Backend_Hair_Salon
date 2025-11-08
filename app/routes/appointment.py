@@ -7,6 +7,75 @@ from flasgger import swag_from
 
 appointment_bp = Blueprint("appointment_bp", __name__)
 
+
+@appointment_bp.route("/book_appointment", methods=["POST"])
+def book_appointment():
+    
+    """
+    Book an appointment
+    ---
+    tags:
+      - Appointments
+    description: Allows the client to modify an existing appointment by changing the service or slot.
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            stripe_id:
+              type: string
+              example: "pi_3SRBARLrBwVmxIzX0d6RAvb6"
+            client_email:
+              type: string
+              example: "jane@example.com"
+            client_full_name:
+              type: string
+              example: "John Doe"
+            client_phone:
+              type: string
+              example: "+237654321987"
+            service_id:
+              type: integer
+              example: 1
+            slot_id:
+              type: integer
+              example: 1
+            start_time:
+              type: string
+              format: date-time
+              example: "2025-11-10 18:00:00+00:00"
+    responses:
+      200:
+        description: Appointment created successfully
+      400:
+        description: Invalid input or missing data
+    """
+    
+    data = request.get_json()
+
+    stripe_id = data.get("stripe_id")   # "pi_3SRBARLrBwVmxIzX0d6RAvb6"
+    client_email = data.get("client_email")  # "jane@example.com"
+    client_name = data.get("client_full_name")  # "John Doe"
+    client_phone = data.get("client_phone")  #  "+237654321987"
+    service_id = data.get("service_id")     # 1
+    slot_id = data.get("slot_id")           # 1
+    start_time = data.get("start_time")     # "2025-11-10 18:00:00+00:00"
+        
+    # Trigger the appointment creation
+    return AppointmentService.book_appointment(client_email=client_email, 
+                                       full_name=client_name, 
+                                       phone_number=client_phone, 
+                                       service_id=service_id, 
+                                       slot_id=slot_id, 
+                                       stripe_id=stripe_id, 
+                                       client_start_time=start_time
+                                      )
+
+
+
+
 # get an appointment from the link sent to the client's email
 @appointment_bp.route("/<int:appointment_id>/manage")
 
@@ -88,7 +157,7 @@ def update_appointment(appointment_id):
         description: Unique appointment ID
       - in: body
         name: body
-        required: true
+        required: false
         schema:
           type: object
           properties:

@@ -16,6 +16,7 @@ class SlotRepository:
             end_time = model.end_time,
             date = model.date,
             stylist_id = model.stylist_id,
+            created_at = model.created_at,  # added
             status = model.status
         )
     
@@ -75,14 +76,23 @@ class SlotRepository:
 
 # update
     @staticmethod
-    def update_slot_status(slot_id, status):
+    def update_slot(slot_id, start_time=None, end_time=None, status=None):
         slot = db.session.query(SlotModel).filter_by(id=slot_id).first()
-        if slot:
+        if not slot:
+            return {"error": "Slot not available"}
+        
+        if start_time is not None:
+            slot.start_time = start_time
+        if end_time is not None:
+            slot.end_time = end_time
+        if status is not None:
             slot.status = status
-            db.session.commit()
-            db.session.refresh(slot)
-            return SlotRepository._to_entity(slot)
-        return None
+
+        db.session.commit()
+        db.session.refresh(slot)
+        return SlotRepository._to_entity(slot)
+
+        
     
 
 # delete

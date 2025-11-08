@@ -1,6 +1,8 @@
+import pytz
 from app.models.repositories.appointment_repo import AppointmentRepository
 from app.models.entities.appointment import appointmentEntity
 from app.models.repositories.service_repo import ServiceRepository
+from app.services.slot_service import SlotService
 from app.services.payment_service import PaymentService
 from app.services.calendar_service import CalendarService
 from app.models.repositories.payment_repo import PaymentRepository
@@ -8,7 +10,7 @@ from app.integrations.google_calendar import cancel_google_event
 from app.models.repositories.slot_repo import SlotRepository
 from app.models.repositories.user_repo import UserRepository
 from app.services.user_service import UserService
-import datetime
+from datetime import datetime, timedelta, timezone
 
 import secrets
 from app.models.entities.appointment_token import tokenEntity
@@ -20,20 +22,52 @@ from app.utils.email_util import EmailService
 class AppointmentService:
 
     @staticmethod
-    def book_appointment(client_email, full_name, phone_number, service_id, slot_id, stripe_id):
+    def book_appointment(client_email, full_name, phone_number, service_id, slot_id, stripe_id, client_start_time=None):
         try:
             # the stripe_id comes from the stripe_webhook
             payment = PaymentRepository.get_payment_by_stripe_id(stripe_id)
-    
-            # get the start_time and end_time from the slot table through the slot_id
-            slot = SlotRepository.get_slot_by_id(slot_id)
-
-            # get client information
-            #client = UserRepository.get_users_by_email(client_email)
-            
 
             # get service information
             service = ServiceRepository.get_service_by_id(service_id)
+    
+            # get the start_time and end_time from the slot table through the slot_id
+            original_slot = SlotRepository.get_slot_by_id(slot_id)
+
+            # check timezone info
+            if original_slot.start_time.tzinfo is None:
+                original_slot.start_time = original_slot.start_time.replace(tzinfo= timezone.utc)
+            if original_slot.end_time.tzinfo is None:
+                original_slot.end_time = original_slot.end_time.replace(tzinfo= timezone.utc)
+
+
+            # performing the slot splitting here, if necessary
+            slot_duration = (original_slot.end_time - original_slot.start_time).total_seconds() / 60
+            if slot_duration > service.duration:
+                # inside book_appointment()
+                if isinstance(client_start_time, str):
+                    client_start_time = datetime.fromisoformat(client_start_time)
+
+                if client_start_time.tzinfo is None:
+                    client_start_time = pytz.UTC.localize(client_start_time)
+                
+                # get the service end time
+                service_end = client_start_time + timedelta(minutes=service.duration)
+
+                SlotService.book_partial_slot(slot_id=slot_id, 
+                                              slot_start_time=original_slot.start_time,
+                                              slot_end_time=original_slot.end_time,
+                                              slot_stylist_id=original_slot.stylist_id,
+                                              slot_date=original_slot.date,
+                                              service_start=client_start_time,
+                                              service_end=service_end
+                                            )
+            else:
+                # change slot status to booked
+                SlotRepository.update_slot(slot_id, status="booked")
+
+            # get the start_time and end_time from the slot table through the slot_id again, just incase the slot was updated
+            slot = SlotRepository.get_slot_by_id(slot_id)
+
 
             # get stylist information
             stylist = UserRepository.get_users_by_id(slot.stylist_id)
@@ -43,11 +77,11 @@ class AppointmentService:
             event = CalendarService.create_calendar_event(start_time = slot.start_time, 
                                                       end_time = slot.end_time, 
                                                       service_name = service.name, 
-                                                      stylist_first_name = stylist.full_name)
+                                                      stylist_full_name = stylist.full_name)
             
             #save user info
             client = UserService.create_user(full_name, client_email, phone_number, password=None)
-
+            
             # save appointment to the database
             appointment = appointmentEntity(
                 client_id = client.id,
@@ -58,9 +92,6 @@ class AppointmentService:
             )
             # save appointment
             saved_appointment = AppointmentRepository.save_appointment(appointment)
-
-            # change slot status to booked
-            SlotRepository.update_slot_status(slot_id, "booked")
 
        
             #### Generate a secure token ###
@@ -88,7 +119,10 @@ class AppointmentService:
             return saved_appointment.to_dict()
         
         except Exception as e:
-            return ({"error": str(e)}), 400
+            print("❌ Error in book_appointment():", str(e))
+            import traceback
+            traceback.print_exc()
+            raise e
 
 
     @staticmethod
@@ -146,10 +180,10 @@ class AppointmentService:
         # changing the status of the slots (if a new slot is selected)
         if slot_id:
             # free up the former slot occupied, if a new slot is selected
-            SlotRepository.update_slot_status(appointment.slot_id, "available")
+            SlotRepository.update_slot(appointment.slot_id, status="available")
 
             # setting the status of the new selected slot to booked
-            SlotRepository.update_slot_status(slot_id, "booked")
+            SlotRepository.update_slot(slot_id, status="booked")
 
         # Update appointment in DB with new details
         updated_appointment = AppointmentRepository.update_appointment(
@@ -184,7 +218,7 @@ class AppointmentService:
         TokenRepository.delete_token(appointment.id)
 
         # change slot status to available
-        SlotRepository.update_slot_status(appointment.slot_id, "available")
+        SlotRepository.update_slot(appointment.slot_id, status="available")
 
         return {"message": "Appointment cancelled successfully"}  
       

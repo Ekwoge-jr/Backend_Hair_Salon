@@ -9,7 +9,7 @@ class UserService:
     def create_user(full_name, email, phone_number, password=None):
         user = UserRepository.get_users_by_email(email)
         if user:
-            return True
+            return user
         
         if password is not None:
             hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")

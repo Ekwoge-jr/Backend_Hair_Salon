@@ -60,7 +60,7 @@ class ServiceRepository:
     @staticmethod
     def update_service(service_id, name=None, description=None, price=None, image=None, duration=None):
 
-        try:
+        #try:
             service = db.session.query(ServiceModel).filter_by(id=service_id).first()
             if not service:
                 return {"error": "Service not available"}
@@ -80,9 +80,9 @@ class ServiceRepository:
             db.session.refresh(service)
             return ServiceRepository._to_entity(service)
     
-        except Exception as e:
-            db.session.rollback()
-            return {"error": f"Failed to update service: {str(e)}"}
+        #except Exception as e:
+        #    db.session.rollback()
+        #    return {"error": f"Failed to update service: {str(e)}"}
         
     
 
