@@ -10,6 +10,25 @@ slot_bp = Blueprint("slot_bp", __name__)
 
 @slot_bp.route("/delete_slot/<int:slot_id>", methods=["DELETE"])
 def delete_slot(slot_id):
+    
+    """
+    Delete a slot
+    ---
+    tags:
+      - Slots
+    parameters:
+      - name: slot_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the slot to delete
+    responses:
+      200:
+        description: Slot deleted successfully
+      400:
+        description: Error deleting slot
+    """
+
     try:
         SlotService.delete_slot(slot_id)
         return {"message": "slot deleted"}
@@ -125,8 +144,36 @@ def create_slot(user_id):
 
 @slot_bp.route("/get_slot/<int:service_id>", methods=["GET"])
 def get_available_slots(service_id):
+    
     """
-    Retrieve available slots that are long enough for the selected service.
+    Retrieve available slots
+    ---
+    tags: 
+      - Slots
+    description: Fetches a list of all available slots that can contain a particuler service from the database.
+    responses:
+      200:
+        description: List of slots retrieved successfully.
+        content: 
+          application/json: 
+            schema:
+              type: array
+              items:
+                type: object
+              properties:
+                id: 
+                  type: integer
+                  example: 1
+                start_time: 
+                  type: string
+                end_time: 
+                  type: string
+                date: 
+                  type: string
+                stylist_id:
+                  type: integer
+      400: 
+        description: Error retrieving slots.
     """
     try:
         from app.models.repositories.service_repo import ServiceRepository
