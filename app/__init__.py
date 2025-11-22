@@ -3,6 +3,8 @@ from flasgger import Swagger  # used to expose the API endpoints
 from app.config import Config
 from app.database import db
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager  # for jwt authentication
+import os
 
 
 bcrypt = Bcrypt()   
@@ -20,11 +22,22 @@ from app.routes.auth import auth_bp
 from app.routes.slot import slot_bp
 
 
+jwt = JWTManager()
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+
+    # Set secret key (use .env)
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 3600  # 1 hour
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = 2592000  # 30 days
+
+    # Initialise JWT
+    jwt.init_app(app)
+
 
     # initialise database
     db.init_app(app)

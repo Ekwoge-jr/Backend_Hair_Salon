@@ -4,12 +4,14 @@ from datetime import datetime
 from app import db
 import pytz
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 slot_bp = Blueprint("slot_bp", __name__)
 
 
-@slot_bp.route("/delete_slot/<int:slot_id>", methods=["DELETE"])
-def delete_slot(slot_id):
+@slot_bp.route("/delete_slot/<int:user_id>/<int:slot_id>", methods=["DELETE"])
+def delete_slot(user_id,slot_id):
     
     """
     Delete a slot
@@ -17,6 +19,11 @@ def delete_slot(slot_id):
     tags:
       - Slots
     parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the stylist
       - name: slot_id
         in: path
         type: integer
@@ -29,6 +36,12 @@ def delete_slot(slot_id):
         description: Error deleting slot
     """
 
+    current_user = get_jwt_identity()
+    
+    # ensure only stylists can create slots
+    if current_user["id"] != user_id or current_user["role"] != "stylist":
+        return jsonify({"error": "Unauthorized"}), 403
+
     try:
         SlotService.delete_slot(slot_id)
         return {"message": "slot deleted"}
@@ -39,6 +52,7 @@ def delete_slot(slot_id):
 
 
 @slot_bp.route("/create_slot/<int:user_id>", methods=["POST"])
+@jwt_required()
 def create_slot(user_id):
     """
     Create a slot (either date or period)
@@ -85,6 +99,11 @@ def create_slot(user_id):
         description: Invalid input or user creation failed.
     """
 
+    current_user = get_jwt_identity()
+    
+    # ensure only stylists can create slots
+    if current_user["id"] != user_id or current_user["role"] != "stylist":
+        return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
 
@@ -151,6 +170,12 @@ def get_available_slots(service_id):
     tags: 
       - Slots
     description: Fetches a list of all available slots that can contain a particuler service from the database.
+    parameters:
+      - name: service_id
+        in: path
+        type: integer
+        required: true
+        
     responses:
       200:
         description: List of slots retrieved successfully.

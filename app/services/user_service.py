@@ -6,7 +6,7 @@ from app import bcrypt
 class UserService:
 
     @staticmethod
-    def create_user(full_name, email, phone_number, password=None):
+    def create_user(full_name, email, phone_number, password=None, role=None):
         user = UserRepository.get_users_by_email(email)
         if user:
             return user
@@ -15,11 +15,13 @@ class UserService:
             hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
         else:
             hashed_password = None
+            
         new_user = userEntity(
             full_name = full_name,
             email = email,
             phone_number = phone_number,    
-            password = hashed_password
+            password = hashed_password,
+            role= role
         )
         return UserRepository.save_user(new_user)
     

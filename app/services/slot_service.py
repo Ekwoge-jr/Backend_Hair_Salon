@@ -112,7 +112,7 @@ class SlotService:
             slot_duration = (slot.end_time - slot.start_time).total_seconds() / 60
             if slot_duration >= min_duration:
                 valid_slots.append(slot)
-
+        
         return valid_slots
     
 

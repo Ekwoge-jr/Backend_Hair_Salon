@@ -58,7 +58,7 @@ def create_user():
         return {"message": "Please enter your email!"}
     
     try:
-        result=  UserService.create_user(full_name, email, phone_number, password)
+        result=  UserService.create_user(full_name, email, phone_number, password, role="stylist")
         return jsonify(result.to_dict())
     except Exception as e:
         return jsonify({"error": str(e)}), 400

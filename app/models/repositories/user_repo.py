@@ -27,7 +27,8 @@ class UserRepository:
             full_name = entity.full_name,
             email = entity.email,
             phone_number = entity.phone_number,
-            password = entity.password
+            password = entity.password,
+            role = entity.role
         )
         db.session.add(new_user)
         db.session.commit()

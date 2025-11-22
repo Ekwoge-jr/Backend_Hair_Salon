@@ -5,6 +5,8 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 service_bp = Blueprint("service_bp", __name__)
 
@@ -19,8 +21,9 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@service_bp.route("/create-service", methods= ["POST"])
-def create_service():
+@service_bp.route("/create-service/<int:user_id>", methods= ["POST"])
+@jwt_required()
+def create_service(user_id):
 
     """
     Create a new service
@@ -31,6 +34,11 @@ def create_service():
     consumes:
       - multipart/form-data
     parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the admin
       - name: name
         in: formData
         type: string
@@ -63,6 +71,11 @@ def create_service():
         description: Invalid image format or missing data
     """
 
+    current_user = get_jwt_identity()
+    
+    # ensure only stylists can create slots
+    if current_user["id"] != user_id or current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
     name = request.form.get("name")
     description = request.form.get("description")
@@ -89,8 +102,8 @@ def create_service():
 
 
 
-@service_bp.route("/update/<int:service_id>", methods=["PUT"])
-def update(service_id):
+@service_bp.route("/update/<int:user_id>/<int:service_id>", methods=["PUT"])
+def update(user_id, service_id):
 
     """
     Update a service
@@ -101,6 +114,11 @@ def update(service_id):
     consumes:
       - multipart/form-data
     parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the admin
       - name: service_id
         in: path
         type: integer
@@ -133,6 +151,12 @@ def update(service_id):
       400:
         description: Error updating service
     """
+
+    current_user = get_jwt_identity()
+    
+    # ensure only stylists can create slots
+    if current_user["id"] != user_id or current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
     name = request.form.get("name")
     description = request.form.get("description")
@@ -200,8 +224,8 @@ def get_services():
 
 
 
-@service_bp.route("/delete/<int:service_id>", methods=["DELETE"])
-def delete_service(service_id):
+@service_bp.route("/delete/<int:User_id>/<int:service_id>", methods=["DELETE"])
+def delete_service(user_id,service_id):
 
     """
     Delete a service
@@ -209,6 +233,11 @@ def delete_service(service_id):
     tags:
       - Services
     parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the admin
       - name: service_id
         in: path
         type: integer
@@ -220,6 +249,13 @@ def delete_service(service_id):
       400:
         description: Error deleting service
     """
+
+    current_user = get_jwt_identity()
+    
+    # ensure only stylists can create slots
+    if current_user["id"] != user_id or current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+
     try:
         return ServiceService.delete_service(service_id)
     except Exception as e:
