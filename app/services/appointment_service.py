@@ -43,6 +43,13 @@ class AppointmentService:
             # performing the slot splitting here, if necessary
             slot_duration = (original_slot.end_time - original_slot.start_time).total_seconds() / 60
             if slot_duration > service.duration:
+
+                 # Edit the next 6 lines
+                if client_start_time is None:
+                    print("Error: client_start_time is None")
+                    
+                    raise ValueError("Missing or invalid start time for ")
+
                 # inside book_appointment()
                 if isinstance(client_start_time, str):
                     client_start_time = datetime.fromisoformat(client_start_time)

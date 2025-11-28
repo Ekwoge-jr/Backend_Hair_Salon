@@ -17,7 +17,7 @@ class EmailService:
         body = f"""
         Hi {client_name},
 
-        Your appointment for **{service_name}** with {stylist_name} has been successfully booked for {appointment_date}.
+        Your appointment for {service_name} with {stylist_name} has been successfully booked for {appointment_date}.
 
         You can view, reschedule, or cancel your appointment anytime using this secure link:
         {manage_link}

@@ -7,10 +7,14 @@ from app.services.payment_service import PaymentService
 from flasgger import swag_from
 from datetime import datetime, timezone
 import pytz
+import os
+
+import requests
 
 
 payment_bp = Blueprint("payment_bp", __name__)
 
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 @payment_bp.route("/create-payment", methods=["POST"])
 def create_payment():
@@ -112,16 +116,35 @@ def create_payment():
 
     # --- Convert to UTC ---
     start_utc = start_local.astimezone(pytz.UTC)
-
+    # time = str(start_utc)
+    
     metadata={
         "client_email": client_email,
-        "first_name": full_name,
+        "full_name": full_name,
         "phone_number": phone_number,
         "service_id": service_id,
         "slot_id": slot_id,
         "start_time": start_utc
     }
     
+  
+    recaptcha_token = data.get("recaptcha_token")
+
+    if not recaptcha_token:
+        return jsonify({"message": "Captcha is required"}), 400
+
+    payload = {
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_token
+    }
+
+    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload, timeout=10)
+    result = response.json()
+
+    if not result.get('success'):
+        return jsonify({"message": "CAPTCHA verification failed"}), 400
+
+
     try:
         
         return PaymentService.create_payment(amount, currency, metadata)

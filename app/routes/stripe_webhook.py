@@ -47,7 +47,10 @@ def stripe_webhook():
         start_time = None
         if start_time_str:
             try:
-                start_time = datetime.fromisoformat(start_time_str)
+                timestamp = int(start_time_str) # added
+                
+                # start_time = datetime.fromisoformat(start_time_str)
+                start_time = datetime.fromtimestamp(timestamp, tz=pytz.UTC) # Added
                 if start_time.tzinfo is None:
                     start_time = pytz.UTC.localize(start_time)
             except Exception:

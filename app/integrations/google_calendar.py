@@ -10,15 +10,23 @@ import os
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 # Path to token.json (stores access/refresh tokens)
-TOKEN_FILE = "token.json"
-CREDENTIALS_FILE = "D:\FET\Internship\Hair Salon project\Backend\credentials.json"
+# TOKEN_FILE = "token.json"
+CREDENTIALS_FILE = "/Users/mrfomfoh/Downloads/Backend_Hair_Salon-main/credentials.json"
 
-def get_calendar_service():
+
+def get_token_file(email):
+    safe_email = email.replace("@", "_").replace(".", "_")
+    return f"tokens/{safe_email}_token.json"
+
+
+def get_calendar_service(user_email):
     creds = None
 
+    token_file = get_token_file(user_email)
+
     # Load saved credentials if available
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
     
     # If no valid credentials, prompt login flow
     if not creds or not creds.valid:
@@ -26,20 +34,21 @@ def get_calendar_service():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=8080)
+            creds = flow.run_local_server(port=8085) # added, changed from 8080 to 8085
         
-        # Save the credentials for next time
-        with open(TOKEN_FILE, "w") as token:
+        # Save the credentials for that specific email
+        os.makedirs("tokens", exist_ok=True)
+        with open(token_file, "w") as token:
             token.write(creds.to_json())
 
     return build("calendar", "v3", credentials=creds)
 
 
-def create_google_event(summary, description, start_time, end_time):
+def create_google_event(summary, description, start_time, end_time, user_email):
     """
     Creates a Google Calendar event and returns the event ID.
     """
-    service = get_calendar_service()
+    service = get_calendar_service(user_email)
     # TIMEZONE = str(get_localzone()) # Detect system timezone automatically
 
     event = {
@@ -47,11 +56,9 @@ def create_google_event(summary, description, start_time, end_time):
         "description": description,
         "start": {
             "dateTime": start_time,
-            
         },
         "end": {
             "dateTime": end_time,
-            
         },
     }
 

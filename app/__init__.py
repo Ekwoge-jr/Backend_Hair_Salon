@@ -21,12 +21,19 @@ from app.routes.service import service_bp
 from app.routes.auth import auth_bp
 from app.routes.slot import slot_bp
 
+# from julius
+# from flask_cors import CORS #added
+# UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads', 'services')
 
 jwt = JWTManager()
 
 
 def create_app():
     app = Flask(__name__)
+
+    # from julius
+    #  CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}}) # 
+
     app.config.from_object(Config)
 
 
@@ -50,6 +57,21 @@ def create_app():
         "title": "Hair Salon Booking API",
         "uiversion": 3
     }
+
+
+    # from julius
+    '''
+     # added the next 9 lines
+    app.config['SERVICE_UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Ensure folder exist
+    
+    # 2. Add the route to serve the uploaded files publicly
+    @app.route('/uploads/services/<filename>')
+    def uploaded_file(filename):
+        # Serve the file from the configured folder
+        return send_from_directory(app.config['SERVICE_UPLOAD_FOLDER'], filename)
+    '''
+
 
     Swagger(app)   # ✅ attach swagger/openapi
 
