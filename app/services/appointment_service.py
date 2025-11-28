@@ -84,7 +84,8 @@ class AppointmentService:
             event = CalendarService.create_calendar_event(start_time = slot.start_time, 
                                                       end_time = slot.end_time, 
                                                       service_name = service.name, 
-                                                      stylist_full_name = stylist.full_name)
+                                                      stylist_full_name = stylist.full_name,
+                                                      user_email = client_email)
             
             #save user info
             client = UserService.create_user(full_name, client_email, phone_number, password=None)
@@ -148,7 +149,6 @@ class AppointmentService:
         """
         count = AppointmentRepository.expire_old_appointments()
 
-        
     
         return {f"Marked {count} appointments as completed"}
 
@@ -175,6 +175,9 @@ class AppointmentService:
         if not slot:
             return {"error": "Slot not found"}
         
+        # get user info inorder to get their email
+        user = UserRepository.get_users_by_id(appointment.client_id)
+
         # get service information
         service = ServiceRepository.get_service_by_id(service_id)
 
@@ -182,7 +185,7 @@ class AppointmentService:
         stylist = UserRepository.get_users_by_id(slot.stylist_id)
 
         # Create new calendar event
-        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service.name, stylist.full_name)
+        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service.name, stylist.full_name, user.email)
 
         # changing the status of the slots (if a new slot is selected)
         if slot_id:

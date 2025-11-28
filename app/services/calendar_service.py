@@ -7,7 +7,7 @@ import datetime
 class CalendarService:
 
     @staticmethod
-    def create_calendar_event(start_time, end_time, service_name, stylist_full_name):
+    def create_calendar_event(start_time, end_time, service_name, stylist_full_name, user_email):
 
         # create the event on google_calendar and get the event id
         event_id = create_google_event(
@@ -15,6 +15,7 @@ class CalendarService:
             description = f"Your have a {service_name} appointment which is to be done by {stylist_full_name}",
             start_time = start_time.isoformat() + "Z",
             end_time = end_time.isoformat() + "Z",
+            user_email = user_email
         )
 
         return event_id
