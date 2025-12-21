@@ -16,19 +16,26 @@ class UserRepository:
             email = model.email,
             phone_number = model.phone_number,
             password = model.password,
-            role = model.role
+            role = model.role,
+            is_active = model.is_active,
+            
+            google_access_token = model.google_access_token,
+            google_refresh_token = model.google_refresh_token,
+            google_token_expiry = model.google_token_expiry
         )
 
 
 # create
     @staticmethod
     def save_user(entity: userEntity):
+        print("This is the entity object in the user_repo.py in models", entity)
         new_user = UserModel(
             full_name = entity.full_name,
             email = entity.email,
             phone_number = entity.phone_number,
             password = entity.password,
-            role = entity.role
+            role = entity.role,
+            is_active = True
         )
         db.session.add(new_user)
         db.session.commit()
@@ -42,8 +49,14 @@ class UserRepository:
 # read
     @staticmethod
     def get_all_users():
+        """
         results = db.session.query(UserModel).all()
         return [UserRepository._to_entity(user) for user in results]
+        """
+        # We query the Model directly
+        results = db.session.query(UserModel).filter(UserModel.is_active == True).all()
+        return [UserRepository._to_entity(user) for user in results]
+
     
     @staticmethod
     def get_users_by_id(user_id):
@@ -88,9 +101,21 @@ class UserRepository:
 # delete
     @staticmethod
     def delete_user(user_id):
+        """
         user = db.session.query(UserModel).filter_by(id=user_id).first()
         if user:
             db.session.delete(user)
             db.session.commit()
             return True
         return False
+        """
+        # Find the user by ID
+        user = db.session.query(UserModel).filter_by(id=user_id).first()
+        if not user:
+            return False
+        
+        # Soft delete: flip the boolean
+        user.is_active = False
+        db.session.commit()
+        
+        return True

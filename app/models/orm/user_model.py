@@ -9,3 +9,10 @@ class UserModel(db.Model):
     phone_number = db.Column(db.String(25), nullable=False)
     password = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(10), nullable=False, default="client")     # client, stylist/admin 
+
+    # new below
+    is_active = db.Column(db.Boolean, default=True)
+
+    google_access_token = db.Column(db.Text, nullable=True)
+    google_refresh_token = db.Column(db.Text, nullable=True)
+    google_token_expiry = db.Column(db.DateTime, nullable=True)

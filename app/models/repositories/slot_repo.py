@@ -52,8 +52,8 @@ class SlotRepository:
         return SlotRepository._to_entity(result) if result else None
     
     @staticmethod
-    def get_slot_by_date(date):
-        results = db.session.query(SlotModel).filter(SlotModel.date == date).all()
+    def get_slot_by_stylist(stylist_id):
+        results = db.session.query(SlotModel).filter(SlotModel.stylist_id == stylist_id).all()
         return [SlotRepository._to_entity(slot) for slot in results]
     
     @staticmethod
@@ -76,7 +76,7 @@ class SlotRepository:
 
 # update
     @staticmethod
-    def update_slot(slot_id, start_time=None, end_time=None, status=None):
+    def update_slot(slot_id, start_time=None, end_time=None, date=None, status=None):
         slot = db.session.query(SlotModel).filter_by(id=slot_id).first()
         if not slot:
             return {"error": "Slot not available"}
@@ -85,6 +85,8 @@ class SlotRepository:
             slot.start_time = start_time
         if end_time is not None:
             slot.end_time = end_time
+        if date is not None:
+            slot.date = date
         if status is not None:
             slot.status = status
 

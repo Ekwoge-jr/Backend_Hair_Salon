@@ -34,8 +34,25 @@ def stripe_webhook():
     if event["type"] == "payment_intent.succeeded":
         payment_intent = event["data"]["object"]
         metadata = payment_intent.get("metadata", {})
-        
+
         stripe_id = payment_intent["id"]
+
+
+
+
+        # 1. CHECK IF PAYMENT IS ALREADY PROCESSED
+        # We look for a payment record that is already marked as 'succeeded'
+        existing_payment = PaymentRepository.get_payment_by_stripe_id(stripe_id) # Or however you fetch by stripe_id
+        
+        if existing_payment and existing_payment.status == "succeeded":
+            print(f"⚠️ Webhook ignored: Payment {stripe_id} is already processed.")
+            return jsonify({"status": "already_done"}), 200
+
+
+
+
+        
+        
         client_email = metadata.get("client_email")
         full_name = metadata.get("full_name")
         phone_number = metadata.get("phone_number")

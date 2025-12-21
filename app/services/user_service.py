@@ -7,6 +7,16 @@ class UserService:
 
     @staticmethod
     def create_user(full_name, email, phone_number, password=None, role=None):
+
+        existing_user = UserRepository.get_users_by_email(email)
+        
+        if existing_user:
+            if not existing_user.is_active:
+                #  Reactivate the old account instead of crashing!
+                return UserRepository.update_user(existing_user.id, is_active=True, full_name=full_name)
+            return existing_user # Or throw "Email already in use"
+
+        print("This is full_name and email in create_user function in services\n", full_name)
         user = UserRepository.get_users_by_email(email)
         if user:
             return user
@@ -44,6 +54,10 @@ class UserService:
     def get_all_users():
         return UserRepository.get_all_users()
     
+    @staticmethod
+    def get_user(email):
+        return UserRepository.get_users_by_email(email)
+    
 
     @staticmethod
     def update_user(user_id, full_name=None, email=None, phone_number=None, password=None, role=None):
@@ -54,3 +68,7 @@ class UserService:
             hashed_password = None
         user = UserRepository.update_user(user_id, full_name, email, phone_number, hashed_password, role) 
         return user
+    
+    @staticmethod
+    def delete_user(user_id):
+        return UserRepository.delete_user(user_id)

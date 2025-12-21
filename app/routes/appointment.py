@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from app import db
 from flasgger import swag_from
 
+# new
+from app.models.repositories.appointment_repo import AppointmentRepository
+
 appointment_bp = Blueprint("appointment_bp", __name__)
 
 
@@ -130,13 +133,172 @@ def manage_appointment(appointment_id):
         return jsonify({"error": "Invalid token or link has expired"}), 403
     
     # ✅ Expiration check
-    if datetime.now(timezone.utc) > record.expires_at:
-        return jsonify({"error": "This link has expired"}), 403
+    #if datetime.now(timezone.utc) > record.expires_at:
+    #    return jsonify({"error": "This link has expired"}), 403
+    #if datetime.utcnow() > record.expires_at:
+    #  return jsonify({"error": "Link has expired"}), 403
+    if datetime.now(timezone.utc) > record.expires_at.replace(tzinfo=timezone.utc):
+      return jsonify({"error": "Link has expired"}), 403
 
     # ✅ Token is valid
-    appointment = AppointmentService.get_all_appointments(appointment_id)
+    # appointment = AppointmentService.get_all_appointments(appointment_id)
+    appointment = AppointmentRepository.get_all_appointments(appointment_id)
 
     return appointment
+
+
+
+# get all appointments
+@appointment_bp.route("/get", methods=["GET"])
+def get_appointments():
+    
+    """
+    Get all appointments
+    ---
+    tags:
+      - Appointments
+    description: Gets all the booked appointments from the database.
+    responses:
+      200:
+        description: List of appointments retrieved successfully.
+        content: 
+          application/json: 
+            schema:
+              type: array
+              items:
+                type: object
+              properties:
+                appointment_id: 
+                  type: integer
+                  example: 1
+                appointment_status:
+                  type: string
+                  example: booked
+                appointment_created_at: 
+                  type: string
+                  format: date
+                  example: "2025-12-02"
+                google_event_id: 
+                  type: string
+                client_name:
+                  type: string
+                  example: Julius
+                client_email:
+                  type: string
+                  example: johndoe@gmail.com
+                service_name:
+                  type: string
+                  example: Braids
+                stylist_name:
+                  type: string
+                  example: Julius
+                start_time:
+                  type: string
+                  format: date-time
+                  example: "2025-11-22T14:00:00-04:00"
+                end_time:
+                  type: string
+                  format: date-time
+                  example: "2025-11-22T17:00:00-04:00"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-11-22"
+
+      400:
+        description: Error retrieving appointments
+    """
+
+    try:
+        results = AppointmentService.get_all_appointments()
+        return results
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+
+
+
+
+
+# get appointments for a single stylist
+@appointment_bp.route("/get_stylist_appointment/<int:stylist_id>", methods=["GET"])
+def get_stylist_appointments(stylist_id):
+    
+    """
+    Get stylist appointments
+    ---
+    tags:
+      - Appointments
+    description: Gets all the booked appointments from the database for a given stylist.
+    parameters:
+      - in: path
+        name: stylist_id
+        type: integer
+        required: true
+        description: Unique stylist ID
+
+    responses:
+      200:
+        description: List of appointments retrieved successfully.
+        content: 
+          application/json: 
+            schema:
+              type: array
+              items:
+                type: object
+              properties:
+                appointment_id: 
+                  type: integer
+                  example: 1
+                appointment_status:
+                  type: string
+                  example: booked
+                appointment_created_at: 
+                  type: string
+                  format: date
+                  example: "2025-12-02"
+                google_event_id: 
+                  type: string
+                client_name:
+                  type: string
+                  example: Julius
+                client_email:
+                  type: string
+                  example: johndoe@gmail.com
+                service_name:
+                  type: string
+                  example: Braids
+                stylist_name:
+                  type: string
+                  example: Julius
+                start_time:
+                  type: string
+                  format: date-time
+                  example: "2025-11-22T14:00:00-04:00"
+                end_time:
+                  type: string
+                  format: date-time
+                  example: "2025-11-22T17:00:00-04:00"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-11-22"
+
+      400:
+        description: Error retrieving appointments
+    """
+
+    try:
+        results = AppointmentService.get_appointments_per_stylist(stylist_id)
+        return results
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+
+
+
 
 
 # edit

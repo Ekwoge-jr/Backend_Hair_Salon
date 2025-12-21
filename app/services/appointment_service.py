@@ -85,7 +85,8 @@ class AppointmentService:
                                                       end_time = slot.end_time, 
                                                       service_name = service.name, 
                                                       stylist_full_name = stylist.full_name,
-                                                      user_email = client_email)
+                                                      user_email = client_email,
+                                                      stylist_email = stylist.email)
             
             #save user info
             client = UserService.create_user(full_name, client_email, phone_number, password=None)
@@ -116,7 +117,7 @@ class AppointmentService:
             TokenRepository.save_token(new_token)
 
             # Now the confirmation/modification link generation
-            manage_link = f"https://yourfrontend.com/appointments/{saved_appointment.id}/manage?token={token_value}" 
+            manage_link = f"http://localhost:8080/appointments/{saved_appointment.id}/manage?token={token_value}" 
 
 
             # Send notification via email
@@ -139,6 +140,13 @@ class AppointmentService:
             It can also return a specific appointment, if the appointment id is given. 
         """
         return AppointmentRepository.get_all_appointments()
+    
+    @staticmethod
+    def get_appointments_per_stylist(stylist_id):
+        """ This function returns the appointment with its details in words, like the client name and others 
+            for a particular stylist.
+        """
+        return AppointmentRepository.get_appointments_per_stylist(stylist_id)
 
 
     @staticmethod
@@ -164,20 +172,25 @@ class AppointmentService:
         if not appointment:
             return False
         
+        # get user info inorder to get their email
+        user = UserRepository.get_users_by_id(appointment.client_id)
+        
+        slot_previous = SlotRepository.get_slot_by_id(appointment.slot_id)
+        stylist_previous = UserRepository.get_users_by_id(slot_previous.stylist_id)
+        
         # Cancel old calendar event if it exists
         if appointment.google_event_id:
-            cancel_result = cancel_google_event(appointment.google_event_id)
+            cancel_result = cancel_google_event(appointment.google_event_id, stylist_previous.email)
             if "error" in cancel_result:
                 return {"error": f"Failed to cancel old Google event: {cancel_result['error']}"}
-
+            
+            
         # Get the new slot
         slot = SlotRepository.get_slot_by_id(slot_id)
         if not slot:
             return {"error": "Slot not found"}
         
-        # get user info inorder to get their email
-        user = UserRepository.get_users_by_id(appointment.client_id)
-
+    
         # get service information
         service = ServiceRepository.get_service_by_id(service_id)
 
@@ -185,7 +198,7 @@ class AppointmentService:
         stylist = UserRepository.get_users_by_id(slot.stylist_id)
 
         # Create new calendar event
-        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service.name, stylist.full_name, user.email)
+        new_event_id = CalendarService.create_calendar_event(slot.start_time, slot.end_time, service.name, stylist.full_name, user.email, stylist.email)
 
         # changing the status of the slots (if a new slot is selected)
         if slot_id:
@@ -211,8 +224,14 @@ class AppointmentService:
 
         if not appointment:
             return {"error": "Appointment not found for this Google event"}
+        
+         # get user info inorder to get their email
+        # user = UserRepository.get_users_by_id(appointment.client_id)
 
-        event_result = cancel_google_event(appointment.google_event_id)
+        slot = SlotRepository.get_slot_by_id(appointment.slot_id)
+        stylist = UserRepository.get_users_by_id(slot.stylist_id)
+
+        event_result = cancel_google_event(appointment.google_event_id, stylist.email)
 
         if "error" in event_result:
             return {"error": f"Failed to cancel Google event: {event_result['error']}"}

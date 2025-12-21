@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.services.service_service import ServiceService
+
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 
+from flask_cors import cross_origin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
@@ -22,6 +24,7 @@ def allowed_file(filename):
 
 
 @service_bp.route("/create-service/<int:user_id>", methods= ["POST"])
+@cross_origin()
 @jwt_required()
 def create_service(user_id):
 
@@ -72,6 +75,25 @@ def create_service(user_id):
     """
 
     current_user = get_jwt_identity()
+    print("--- AUTH DEBUG ---")
+    print(f"Token Identity: {current_user}")
+    print(f"URL user_id: {user_id}")
+    print(f"Type of URL id: {type(user_id)}")
+
+    if isinstance(current_user, dict):
+        token_id = current_user.get("id")
+        token_role = current_user.get("role")
+    else:
+        # If identity is just a string/int ID
+        token_id = current_user
+        token_role = "admin" # (You might need to fetch the user from DB to verify role here)
+
+    # UPDATED CHECK: Ensure types match (both as integers)
+    if int(token_id) != int(user_id) or token_role != "admin":
+        return jsonify({
+            "error": "Unauthorized",
+            "msg": f"Token ID {token_id} doesn't match URL ID {user_id} or role isn't admin"
+        }), 403
     
     # ensure only stylists can create slots
     if current_user["id"] != user_id or current_user["role"] != "admin":
@@ -94,6 +116,8 @@ def create_service(user_id):
     image.save(save_path)
 
     try:
+        print("Files:", request.files)
+        print("Form Data:", request.form)
         result=  ServiceService.create_service(name, description, price, filename, duration)
         return jsonify(result.to_dict()), 200
     except Exception as e:

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flasgger import Swagger  # used to expose the API endpoints
 from app.config import Config
 from app.database import db
@@ -6,9 +6,9 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager  # for jwt authentication
 import os
 
+from flask_migrate import Migrate  # added this for migration (7/12/25) ################### (pip install Flask-Migrate)
 
 bcrypt = Bcrypt()   
-
 
 from app.routes.payment import payment_bp
 from app.routes.calendar import calendar_bp
@@ -21,9 +21,15 @@ from app.routes.service import service_bp
 from app.routes.auth import auth_bp
 from app.routes.slot import slot_bp
 
+from flask_cors import CORS #added
+
+
+
+migrate = Migrate()  ## added this (7/12/25) ###########################
+
 # from julius
-# from flask_cors import CORS #added
-# UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads', 'services')
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads', 'services')
 
 jwt = JWTManager()
 
@@ -32,7 +38,14 @@ def create_app():
     app = Flask(__name__)
 
     # from julius
-    #  CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}}) # 
+    # CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}}) # 
+
+    CORS(app, resources={r"/api/*": {
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Headers"],
+    "supports_credentials": True
+}})
 
     app.config.from_object(Config)
 
@@ -49,6 +62,10 @@ def create_app():
     # initialise database
     db.init_app(app)
 
+
+    migrate.init_app(app, db)    ### added #############################################
+
+
     # initialise bcrypt
     bcrypt.init_app(app)
 
@@ -60,8 +77,8 @@ def create_app():
 
 
     # from julius
-    '''
-     # added the next 9 lines
+    
+    # added the next 9 lines
     app.config['SERVICE_UPLOAD_FOLDER'] = UPLOAD_FOLDER
     os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Ensure folder exist
     
@@ -70,7 +87,7 @@ def create_app():
     def uploaded_file(filename):
         # Serve the file from the configured folder
         return send_from_directory(app.config['SERVICE_UPLOAD_FOLDER'], filename)
-    '''
+    
 
 
     Swagger(app)   # ✅ attach swagger/openapi

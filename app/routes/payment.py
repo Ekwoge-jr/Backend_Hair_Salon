@@ -15,7 +15,8 @@ import requests
 payment_bp = Blueprint("payment_bp", __name__)
 
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
-
+RECAPTCHA_SECRET_KEY = "6Lf9kR4sAAAAABUQiZg7C9WM_63GaXHLagbnf5-J"
+# print(f"Recaptcha keys are {RECAPTCHA_SECRET_KEY}")
 @payment_bp.route("/create-payment", methods=["POST"])
 def create_payment():
 
@@ -129,6 +130,7 @@ def create_payment():
     
   
     recaptcha_token = data.get("recaptcha_token")
+    print(f"Inside the route, Recaptcha keys are {RECAPTCHA_SECRET_KEY}")
 
     if not recaptcha_token:
         return jsonify({"message": "Captcha is required"}), 400
@@ -138,12 +140,12 @@ def create_payment():
         'response': recaptcha_token
     }
 
-    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload, timeout=10)
+    response = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload, timeout=40)
     result = response.json()
+    print(result)
 
     if not result.get('success'):
         return jsonify({"message": "CAPTCHA verification failed"}), 400
-
 
     try:
         

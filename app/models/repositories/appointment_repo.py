@@ -48,7 +48,7 @@ class AppointmentRepository:
 
 # read
     @staticmethod
-    def get_all_appointments(appointment_id = None):
+    def get_all_appointments(appointment_id = None, stylist_id = None):
         """ This function returns the appointment with its details in words, like the client name and others.
             It can also return a specific appointment, if the appointment id is given. 
         """
@@ -90,6 +90,55 @@ class AppointmentRepository:
             return dict(results[0])  # return one record as dict
         else:
             return [dict(row) for row in results]  # return all as list
+
+
+
+    
+    @staticmethod
+    def get_appointments_per_stylist(stylist_id = None):
+        """ This function returns the appointment with its details in words, like the client name and others.
+            It can also return a specific appointment, if the appointment id is given. 
+        """
+        sql = """
+        SELECT 
+            a.id AS appointment_id,
+            a.status AS appointment_status,
+            a.created_at AS appointment_created_at,
+            a.google_event_id,
+            u.full_name AS client_name,
+            u.email AS client_email,
+            se.name AS service_name,
+            us.full_name AS stylist_name,
+            s.start_time,
+            s.end_time,
+            s.date
+        FROM appointments a
+        INNER JOIN users u ON a.client_id = u.id
+        INNER JOIN services se ON a.service_id = se.id
+        INNER JOIN slots s ON a.slot_id = s.id
+        INNER JOIN users us ON s.stylist_id = us.id
+        """
+
+        # Add this condition if stylist_id is provided
+        if stylist_id:
+            sql += " WHERE s.stylist_id = :stylist_id"
+
+        sql += " ORDER BY s.date DESC"
+
+        # Execute SQL
+        params = {"stylist_id": stylist_id} if stylist_id else {}
+        results = db.session.execute(text(sql), params).mappings().all()
+
+        if not results:
+            return None if stylist_id else []
+        
+        # results = db.session.execute(sql).mappings().all()
+        if stylist_id:
+            return dict(results[0])  # return one record as dict
+        else:
+            return [dict(row) for row in results]  # return all as list
+
+
        
     
     @staticmethod

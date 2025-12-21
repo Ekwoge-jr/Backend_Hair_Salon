@@ -75,10 +75,12 @@ class SlotService:
     @staticmethod
     def get_all_available_slots():
         return SlotRepository.get_slot_by_status("available")    
-    
+
+
     @staticmethod
-    def get_slots_by_date(date):
-        return SlotRepository.get_slot_by_date(date)
+    def get_slots_by_stylist(stylist_id):
+        return SlotRepository.get_slot_by_stylist(stylist_id)
+
 
     @staticmethod
     def get_all_slots():
@@ -115,6 +117,12 @@ class SlotService:
         
         return valid_slots
     
+
+
+    @staticmethod
+    def update_slot(slot_id, start_time=None, end_time=None, date=None, status=None):
+        return SlotRepository.update_slot(slot_id, start_time, end_time, date, status)
+
 
 
 
