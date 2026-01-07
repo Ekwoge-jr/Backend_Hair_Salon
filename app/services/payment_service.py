@@ -43,9 +43,21 @@ class PaymentService:
         if not (slot.start_time <= metadata["start_time"] and service_end <= slot.end_time):
             return {"error": "Service time does not fit within available slot"}, 400
         
+        # Change here
+        # We create a copy so we don't break the math logic above
+        stripe_metadata = {
+            "client_email": str(metadata["client_email"]).strip()[:100],
+            "full_name": str(metadata["full_name"]).strip()[:100],
+            "phone_number": str(metadata["phone_number"]).strip()[:100],
+            "service_id": str(metadata["service_id"]),
+            "slot_id": str(metadata["slot_id"]),
+            # Convert datetime to a Unix Timestamp string for the webhook to read easily
+            "start_time": str(int(metadata["start_time"].timestamp())) 
+        }
+
 
         # make payment intent in stripe
-        payment_intent = create_payment_intent(amount, currency, metadata)
+        payment_intent = create_payment_intent(amount, currency, stripe_metadata)
 
     
         # save the payment to our database

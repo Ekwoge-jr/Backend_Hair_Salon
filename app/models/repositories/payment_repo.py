@@ -63,13 +63,14 @@ class PaymentRepository:
 
 # update
     @staticmethod
-    def update_status(id, status):
-        payment = db.session.query(PaymentModel).filter_by(stripe_id=id).first()
+    def update_status(stripe_id, status):
+        payment = db.session.query(PaymentModel).filter_by(stripe_id=stripe_id).first()
         if payment:
             payment.status = status
             db.session.commit()
             db.session.refresh(payment)
             return True
+        print(f"⚠️ Could not find payment in DB with Stripe ID: {stripe_id}")
         return False
 
 

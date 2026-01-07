@@ -8,8 +8,9 @@ import os
 
 from flask_cors import cross_origin
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import json
 
-
+"""
 service_bp = Blueprint("service_bp", __name__)
 
 
@@ -24,11 +25,12 @@ def allowed_file(filename):
 
 
 @service_bp.route("/create-service/<int:user_id>", methods= ["POST"])
-@cross_origin()
+# @cross_origin()
 @jwt_required()
 def create_service(user_id):
 
     """
+"""
     Create a new service
     ---
     tags:
@@ -72,7 +74,7 @@ def create_service(user_id):
         description: Service created successfully
       400:
         description: Invalid image format or missing data
-    """
+    
 
     current_user = get_jwt_identity()
     print("--- AUTH DEBUG ---")
@@ -94,7 +96,6 @@ def create_service(user_id):
             "error": "Unauthorized",
             "msg": f"Token ID {token_id} doesn't match URL ID {user_id} or role isn't admin"
         }), 403
-    
     # ensure only stylists can create slots
     if current_user["id"] != user_id or current_user["role"] != "admin":
         return jsonify({"error": "Unauthorized"}), 403
@@ -111,9 +112,16 @@ def create_service(user_id):
     if not allowed_file(image.filename):
         return jsonify({"error": "Invalid image format"}), 400
     
+    # filename = secure_filename(image.filename)
+    # save_path = os.path.join(UPLOAD_FOLDER, filename)
+    # image.save(save_path)
+
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    upload_path = os.path.join(base_dir, "uploads", "services")
+    os.makedirs(upload_path, exist_ok=True)
+        
     filename = secure_filename(image.filename)
-    save_path = os.path.join(UPLOAD_FOLDER, filename)
-    image.save(save_path)
+    image.save(os.path.join(upload_path, filename))
 
     try:
         print("Files:", request.files)
@@ -122,11 +130,99 @@ def create_service(user_id):
         return jsonify(result.to_dict()), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+"""
+# import os
+# from flask import Blueprint, request, jsonify
+# from werkzeug.utils import secure_filename
+#from flask_jwt_extended import jwt_required, get_jwt_identity
+# from app.services.service_service import ServiceService
+
+service_bp = Blueprint("service_bp", __name__)
+
+# --- FIX: ROBUST PATH LOGIC ---
+# This finds the actual root folder of your project on the cPanel server
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")) 
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "uploads", "services")
+
+# Ensure the folder exists on startup
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def get_safe_identity(current_user):
+    """Safely extracts info whether identity is a dict or a JSON string."""
+    if isinstance(current_user, dict):
+        return int(current_user.get("id")), current_user.get("role")
+    # If for some reason it's still a raw stringified JSON
+    import json
+    try:
+        data = json.loads(current_user)
+        return int(data.get("id")), data.get("role")
+    except:
+        return None, None
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@service_bp.route("/create-service/<int:user_id>", methods=["POST"])
+@jwt_required()
+def create_service(user_id):
+    current_user = get_jwt_identity()
     
+    # --- FIX: UNIFIED IDENTITY CHECK ---
+    # Handle both dictionary and string identities safely
+    if isinstance(current_user, str):
+        try:
+            # Convert the string back into a real dictionary
+            current_user = json.loads(current_user)
+        except json.JSONDecodeError:
+            # Fallback if the token only contains a plain ID string like "1"
+            pass
+
+    # 2. Now that we've ensured it's a dict, we can extract the data
+    if isinstance(current_user, dict):
+        token_id = int(current_user.get("id"))
+        token_role = current_user.get("role")
+    else:
+        # Fallback for old tokens or simple identities
+        token_id = int(current_user)
+        token_role = "admin"
+
+    # 3. Secure comparison
+    if token_id != user_id or token_role != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+    # --- DATA COLLECTION ---
+    name = request.form.get("name")
+    description = request.form.get("description")
+    price = request.form.get("price")
+    duration = request.form.get("duration")
+    image = request.files.get("image")
+
+    if not all([name, description, price, image, duration]):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    if not allowed_file(image.filename):
+        return jsonify({"error": "Invalid image format"}), 400
+    
+    # --- FILE SAVING ---
+    try:
+        filename = secure_filename(image.filename)
+        # Use the absolute path we defined at the top
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        image.save(save_path)
+        
+        # Call your service logic
+        result = ServiceService.create_service(name, description, price, filename, duration)
+        return jsonify(result.to_dict()), 200
+
+    except Exception as e:
+        # This will catch things like "Permission Denied" and return them as JSON
+        # instead of a generic 500 error page
+        return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
 
 
 
-@service_bp.route("/update/<int:user_id>/<int:service_id>", methods=["PUT"])
+@service_bp.route("/update/<int:user_id>/<int:service_id>", methods=["POST"])
+@jwt_required() # ADDED
 def update(user_id, service_id):
 
     """
@@ -179,7 +275,30 @@ def update(user_id, service_id):
     current_user = get_jwt_identity()
     
     # ensure only stylists can create slots
-    if current_user["id"] != user_id or current_user["role"] != "admin":
+    # token_id, token_role = get_safe_identity(current_user)
+
+    if isinstance(current_user, str):
+        try:
+            # Convert the string back into a real dictionary
+            current_user = json.loads(current_user)
+        except json.JSONDecodeError:
+            # Fallback if the token only contains a plain ID string like "1"
+            pass
+
+    # 2. Now that we've ensured it's a dict, we can extract the data
+    if isinstance(current_user, dict):
+        token_id = int(current_user.get("id"))
+        token_role = current_user.get("role")
+    else:
+        # Fallback for old tokens or simple identities
+        token_id = int(current_user)
+        token_role = "admin"
+
+    # 3. Secure comparison
+    if token_id != user_id or token_role != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    if token_id != user_id or token_role != "admin":
         return jsonify({"error": "Unauthorized"}), 403
 
     name = request.form.get("name")
@@ -277,9 +396,28 @@ def delete_service(user_id,service_id):
     current_user = get_jwt_identity()
     
     # ensure only stylists can create slots
-    if current_user["id"] != user_id or current_user["role"] != "admin":
-        return jsonify({"error": "Unauthorized"}), 403
+    # token_id, token_role = get_safe_identity(current_user)
+    if isinstance(current_user, str):
+        try:
+            # Convert the string back into a real dictionary
+            current_user = json.loads(current_user)
+        except json.JSONDecodeError:
+            # Fallback if the token only contains a plain ID string like "1"
+            pass
 
+    # 2. Now that we've ensured it's a dict, we can extract the data
+    if isinstance(current_user, dict):
+        token_id = int(current_user.get("id"))
+        token_role = current_user.get("role")
+    else:
+        # Fallback for old tokens or simple identities
+        token_id = int(current_user)
+        token_role = "admin"
+
+    # 3. Secure comparison-
+    
+    if token_id != user_id or token_role != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
     try:
         return ServiceService.delete_service(service_id)
     except Exception as e:

@@ -3,6 +3,7 @@ import os
 from app.utils.scheduler_util import start_scheduler
 
 app = create_app()
+application = app
 
 if __name__ == "__main__":
 

@@ -98,9 +98,12 @@ def login():
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    user_id = get_jwt_identity()
-    new_access = create_access_token(identity=user_id)
-    return {"access_token": new_access}
+    # user_id = get_jwt_identity()
+    # new_access = create_access_token(identity=user_id)
+    # return {"access_token": new_access}
+    current_identity = get_jwt_identity() 
+    new_access = create_access_token(identity=current_identity)
+    return jsonify({"access_token": new_access}), 200
 
 
 
@@ -165,7 +168,7 @@ def google_callback():
 
   
     # return jsonify({"message": "Google connected successfully"}), 200
-    FRONTEND_DASHBOARD_URL = "http://localhost:8080/stylist/dashboard?google_auth=success" # Adjust this to your actual route
+    FRONTEND_DASHBOARD_URL = "https://kc-afrobraids.inchtechs.com/stylist/dashboard?google_auth=success" # Adjust this to your actual route
     return redirect(FRONTEND_DASHBOARD_URL, code=302) # Use a 302 redirect
 
 

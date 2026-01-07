@@ -15,7 +15,7 @@ import requests
 payment_bp = Blueprint("payment_bp", __name__)
 
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
-RECAPTCHA_SECRET_KEY = "6Lf9kR4sAAAAABUQiZg7C9WM_63GaXHLagbnf5-J"
+# RECAPTCHA_SECRET_KEY = "6Lf9kR4sAAAAABUQiZg7C9WM_63GaXHLagbnf5-J"
 # print(f"Recaptcha keys are {RECAPTCHA_SECRET_KEY}")
 @payment_bp.route("/create-payment", methods=["POST"])
 def create_payment():
@@ -99,7 +99,7 @@ def create_payment():
 
     # validation
     if not re.match(r'[^@]+@[^@]+\.[^@]+', client_email):
-        return {"message": "Invalid email address!"}
+        return ({"message": "Invalid email address!"}), 400
     elif not re.match(r'[A-Za-z]+', full_name):
         return {"message": "Username must contain only characters!"}
     elif not full_name:

@@ -6,6 +6,10 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager  # for jwt authentication
 import os
 
+from flask import jsonify
+from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.exceptions import HTTPException
+
 from flask_migrate import Migrate  # added this for migration (7/12/25) ################### (pip install Flask-Migrate)
 
 bcrypt = Bcrypt()   
@@ -58,6 +62,20 @@ def create_app():
     # Initialise JWT
     jwt.init_app(app)
 
+    @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        # This converts your dictionary {"id": 1, "role": "admin"} 
+        # into a JSON string so the library is happy.
+        import json
+        return json.dumps(user)
+
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        # This allows get_jwt_identity() to return the dictionary back to you
+        import json
+        identity = jwt_data["sub"]
+        return json.loads(identity)
+
 
     # initialise database
     db.init_app(app)
@@ -109,5 +127,30 @@ def create_app():
 
 
     app.register_blueprint(calendar_bp, url_prefix="/api/calendar")
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        # 1. Capture Database-specific errors
+        if isinstance(e, SQLAlchemyError):
+            return jsonify({
+                "code": 500,
+                "type": "DatabaseError",
+                "error": str(e.__dict__.get('orig', e)), # Extracts the raw SQL error
+                "message": "The database rejected this request."
+            }), 500
+
+        # 2. Capture standard HTTP errors (404, 403, etc)
+        if isinstance(e, HTTPException):
+            return jsonify({
+                "code": e.code,
+                "error": e.description,
+            }), e.code
+
+        # 3. Capture all other Python crashes
+        return jsonify({
+            "code": 500,
+            "type": "PythonError",
+            "error": str(e)
+        }), 500
     
     return app

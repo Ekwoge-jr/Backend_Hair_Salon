@@ -30,13 +30,17 @@ class ServiceRepository:
             image = entity.image,
             duration = entity.duration
         )
-        db.session.add(new_service)
-        db.session.commit()
-        db.session.refresh(new_service)
+        try: 
+            db.session.add(new_service)
+            db.session.commit()
+            db.session.refresh(new_service)
 
-        # Return the entity with ID set
-        entity.id = new_service.id
-        return entity
+            # Return the entity with ID set
+            entity.id = new_service.id
+            return entity
+        except Exception as e:
+            db.session.rollback() # CRITICAL FOR CPANEL to handle 500 errors
+            raise e
 
 
 # read

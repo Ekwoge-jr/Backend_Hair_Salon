@@ -56,9 +56,13 @@ def stripe_webhook():
         client_email = metadata.get("client_email")
         full_name = metadata.get("full_name")
         phone_number = metadata.get("phone_number")
-        service_id = int(metadata.get("service_id"))
-        slot_id = int(metadata.get("slot_id"))
-        start_time_str = metadata.get("start_time")
+        try:
+            service_id = int(metadata.get("service_id"))
+            slot_id = int(metadata.get("slot_id"))
+            start_time_str = metadata.get("start_time")
+        except (TypeError, ValueError) as e:
+            print(f"Metadata conversion error: {e}")
+            return jsonify({"error": "Malformed metadata"}), 400
 
         # --- Convert start_time to datetime if present ---
         start_time = None
@@ -75,7 +79,7 @@ def stripe_webhook():
         
 
         # Update payment in DB
-        PaymentRepository.update_status(id=stripe_id, status="succeeded")
+        PaymentRepository.update_status(stripe_id=stripe_id, status="succeeded")
         try:
             # Trigger the appointment creation
             AppointmentService.book_appointment(client_email=client_email, 

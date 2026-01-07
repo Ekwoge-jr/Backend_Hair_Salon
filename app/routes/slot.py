@@ -4,6 +4,8 @@ from datetime import datetime
 from app import db
 import pytz
 
+import json
+
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
@@ -37,12 +39,30 @@ def delete_slot(user_id,slot_id):
         description: Error deleting slot
     """
 
-    current_user = get_jwt_identity()
+    # current_user = get_jwt_identity()
     print("In the delete function")
     
     # ensure only stylists can create slots
-    if current_user["id"] != user_id or current_user["role"] != "stylist":
+    # if current_user["id"] != user_id or current_user["role"] != "stylist":
+    #     return jsonify({"error": "Unauthorized"}), 403
+    identity_data = get_jwt_identity()
+    if isinstance(identity_data, str):
+        try:
+            user_dict = json.loads(identity_data)
+            token_id = int(user_dict.get("id"))
+            token_role = user_dict.get("role")
+        except:
+            token_id = int(identity_data)
+            token_role = "stylist" # Fallback
+    else:
+        token_id = int(identity_data.get("id"))
+        token_role = identity_data.get("role")
+
+    # 2. AUTHORIZATION CHECK
+    # Note: For slots, we allow the specific stylist OR an admin
+    if token_id != user_id and token_role != "stylist":
         return jsonify({"error": "Unauthorized"}), 403
+
 
     try:
         SlotService.delete_slot(slot_id)
@@ -101,12 +121,27 @@ def create_slot(user_id):
         description: Invalid input or user creation failed.
     """
 
-    current_user = get_jwt_identity()
+    identity_data = get_jwt_identity()
     
     # ensure only stylists can create slots
-    if current_user["id"] != user_id or current_user["role"] != "stylist":
-        return jsonify({"error": "Unauthorized"}), 403
+    # if current_user["id"] != user_id or current_user["role"] != "stylist":
+    #     return jsonify({"error": "Unauthorized"}), 403
+    if isinstance(identity_data, str):
+        try:
+            user_dict = json.loads(identity_data)
+            token_id = int(user_dict.get("id"))
+            token_role = user_dict.get("role")
+        except:
+            token_id = int(identity_data)
+            token_role = "stylist" # Fallback
+    else:
+        token_id = int(identity_data.get("id"))
+        token_role = identity_data.get("role")
 
+    # 2. AUTHORIZATION CHECK
+    # Note: For slots, we allow the specific stylist OR an admin
+    if token_id != user_id and token_role != "stylist":
+        return jsonify({"error": "Unauthorized"}), 403
     data = request.get_json()
 
     try:
